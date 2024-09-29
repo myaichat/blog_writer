@@ -12,17 +12,12 @@ llm_config = {"model": "gpt-4o-mini"}
 
 # ## The task!
 title= "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI"
-titles= """
+topics= """
     1. Introduction: The Vision Behind DeepLearning.AI's Community Initiatives
     2. The Power of Collaboration: Uniting Experts in the AI Space
     3. Empowering the Next Generation: Educational Initiatives at DeepLearning.AI
     4. Bridging Gaps: Fostering Inclusivity in AI Communities
-    5. Innovations in AI: How Collaborations Drive Impactful Research
-    6. Community Success Stories: Highlights from DeepLearning.AI's Initiatives
-    7. Building Networks: The Role of Meetups and Events in Community Engagement
-    8. Leveraging Open Source: Contributing to a Collaborative AI Ecosystem
-    9. Feedback Loops: Listening to Community Needs to Shape Future Initiatives
-    10. Conclusion: Sustaining Growth and Cultivating Connections in the AI Community
+    5. Conclusion: Sustaining Growth and Cultivating Connections in the AI Community
 """
 intro ="""
 >>>
@@ -46,7 +41,7 @@ By uniting experts from various sectors—academia, industry, and research—we 
 task = f'''
         Assuming blog title is: "{title}"
         and Final Refined List of Blog Headline Suggestions:
-        {titles}.
+        {topics}.
         Also given the following introduction:
         {intro}
         Also answerred  the second section of the blog:

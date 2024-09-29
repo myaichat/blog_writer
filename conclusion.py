@@ -12,7 +12,7 @@ llm_config = {"model": "gpt-4o-mini"}
 
 # ## The task!
 title= "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI"
-titles= """
+topics= """
     1. Introduction: The Vision Behind DeepLearning.AI's Community Initiatives
     2. The Power of Collaboration: Uniting Experts in the AI Space
     3. Empowering the Next Generation: Educational Initiatives at DeepLearning.AI
@@ -66,7 +66,7 @@ intelligence. Join us as we bridge gaps, foster inclusivity, and celebrate the r
 task = f'''
         Assuming blog title is: "{title}"
         and Final Refined List of Blog Headline Suggestions:
-        {titles}.
+        {topics}.
         Also given the following introduction:
         {intro}
         Also answerred  the second section of the blog:
