@@ -1,5 +1,9 @@
 import wx
 from pubsub import pub
+import include.config.init_config as init_config 
+
+apc = init_config.apc
+
 class Titles():
     def __init__(self):
         self.set_blog()
@@ -19,21 +23,51 @@ class Blog_Controller():
     def  use_title(self, tid):
         print(f"Using title: {tid}")
         blog = self.blog.get_blog()
-        blog['title'] = str(tid)
+        title= apc.titles[tid]
+        blog['title'] = title
         
         blog_html= "<table>"
-        for sid, section in blog.items():
-            blog_html += f'<tr><td><button onclick="testButtonClicked({sid})"></button></td><td>{section}</td></tr>'
+        for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
+            blog_html += f'<tr><td></td><td><b>{sname.capitalize()}</b><br><h2>{section}</h2></td></tr>'
         blog_html += "</table>"
 
         new_html = """
         <html>
         <body>
-            <h1>Blog</h1>
+    <head>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                #header-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                }
+                #header-container h1 {
+                    margin: 0;
+                }
+                #url-input {
+                    width: 300px;
+                    padding: 5px;
+                }
+                #input-container { margin: 20px 0; }
+                #user-input {
+                    width: 300px;
+                    height: 100px;
+                    padding: 5px;
+                    resize: vertical;
+                }
+                #start-button { padding: 5px 10px; vertical-align: top; }
+            </style>
+        </head>        
+        <body>
+            <pre>
+                <div id="header-container">
+                <h1>Blog</h1>
+                <a href="app:reset_blog:0">Reset</a>
+            </div>
             %s
-            <button onclick="testButtonClicked()">New</button>
-            <br><br>
-            <a href="app:url_test">Click this URL</a>
+
             
             <script>
                 function testButtonClicked(tid) {
@@ -103,36 +137,62 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
     def set_initial_content(self):
         initial_html = """
         <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                #input-container { margin: 20px 0; }
+                #user-input {
+                    width: 300px;
+                    height: 100px;
+                    padding: 5px;
+                    resize: vertical;
+                }
+                #start-button { padding: 5px 10px; vertical-align: top; }
+            </style>
+        </head>
         <body>
-            <h1>Blog!</h1>
-            <button onclick="testButtonClicked()">Test Button</button>
-            <br><br>
-            <a href="app:url_test">Click this URL</a>
+            <h1>Blog</h1>
+            <div id="input-container">
+                <textarea id="user-input" placeholder="Enter your title here">Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI</textarea>
+                
+            </div>
+            <div id="button"><button id="start-button" onclick="startButtonClicked()">Set title</button></div>
+            <br><br><br>
+            <div id="output"></div>
             <script>
-                function testButtonClicked() {
-                    console.log('Test button clicked');
-                    window.location.href = 'app:test';
+                function startButtonClicked() {
+                    var userInput = document.getElementById('user-input').value;
+                    document.getElementById('output').innerHTML = 'You entered: ' + userInput;
+                    window.location.href = 'app:set_title:' + encodeURIComponent(userInput);
                 }
             </script>
         </body>
         </html>
-        """
-        initial_html = """
-        <html>
-        <body>
-            <pre>Get titles first >>></pre>
-
-        </body>
-        </html>
-        """        
+        """  
         self.web_view.SetPage(initial_html, "")
+    def decode(self, encoded_string):
+        import urllib.parse
 
+        # The encoded URL string
+        #encoded_string = "Transforming%20Industries%3A%20How%20DeepLearning.AI%20is%20Revolutionizing%20Business%20with%20AI"
+
+        # Decode the string
+        decoded_string = urllib.parse.unquote(encoded_string)
+        return decoded_string
 
 
     def on_navigating(self, event):
         url = event.GetURL()
         print(f"Blog Navigating to: {url}")
         if url.startswith("app:"):
+            _, type,payload = url.split(":")
+            if type == "set_title":
+                title= self.decode(payload)
+                print(f"Setting title: {title}")
+            if type == "reset_blog":
+                title= self.decode(payload)
+                print(f"Resetting blog: {title}")  
+                self.set_initial_content()              
             event.Veto()  # Prevent actual navigation for our custom scheme
 
     def on_webview_error(self, event):

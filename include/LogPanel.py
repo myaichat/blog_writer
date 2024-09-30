@@ -1,8 +1,43 @@
 import wx
-class Log_WebViewPanel(wx.Panel):
+from pubsub import pub
+import include.config.init_config as init_config 
+
+apc = init_config.apc
+class AppLog_Controller():
+    def __init__(self):
+        self.set_log()
+        pub.subscribe(self.on_log, "applog")
+    def on_log(self, log):
+        self.applog.append(log)
+        self.refresh_log()
+    def set_log(self):
+        self.applog = []
+
+    def get_log(self):
+        return self.applog
+
+    def get_log_html(self):
+        out="<table>"
+        for log in self.applog:
+            out += f'<tr><td>{log}</td></tr>'   
+        out += "</table>"
+        return out
+
+    def refresh_log(self):
+        html=self.get_log_html()
+        new_html = """
+        <html>
+        <body>
+        %s
+        </body>
+        </html>
+        """   % html      
+        self.web_view.SetPage(new_html, "")
+
+class Log_WebViewPanel(wx.Panel,AppLog_Controller):
     def __init__(self, parent):
         super().__init__(parent)
-        
+        AppLog_Controller.__init__(self)
         
         # Create the WebView control
         self.web_view = wx.html2.WebView.New(self)
@@ -25,24 +60,17 @@ class Log_WebViewPanel(wx.Panel):
     def attach_custom_scheme_handler(self):
         handler = CustomSchemeHandler_Log(self)
         self.web_view.RegisterHandler(handler)
+    
 
     def set_initial_content(self):
+        html=self.get_log_html()
         initial_html = """
         <html>
         <body>
-            <h1>App Log</h1>
-            <button onclick="testButtonClicked()">Test Button</button>
-            <br><br>
-            <a href="app:url_test">Click this URL</a>
-            <script>
-                function testButtonClicked() {
-                    console.log('Test button clicked');
-                    window.location.href = 'app:test';
-                }
-            </script>
+        %s
         </body>
         </html>
-        """
+        """   % html      
         self.web_view.SetPage(initial_html, "")
 
 
