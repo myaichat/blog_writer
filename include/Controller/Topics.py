@@ -5,18 +5,26 @@ from pprint import pprint as pp
 from include.Controller.Titles import Titles_Controller
 import include.config.init_config as init_config 
 
+class notImplementedError(Exception):
+    pass
+
 apc = init_config.apc
+log=apc.log
 class Topic():
     def __init__(self):
         self.topics = {}
         #self.set_topics()
 
     def set_topics(self, title_id):
-        self.topics[title_id] = ['Introduction: The Vision Behind DeepLearning.AI''s Community Initiatives',
-    'The Power of Collaboration: Uniting Experts in the AI Space',
-    'Empowering the Next Generation: Educational Initiatives at DeepLearning.AI',
-    'Bridging Gaps: Fostering Inclusivity in AI Communities',
-    'Conclusion: Sustaining Growth and Cultivating Connections in the AI Community']
+        if apc.mock:
+            self.topics[title_id] = ['Introduction: The Vision Behind DeepLearning.AI''s Community Initiatives',
+        'The Power of Collaboration: Uniting Experts in the AI Space',
+        'Empowering the Next Generation: Educational Initiatives at DeepLearning.AI',
+        'Bridging Gaps: Fostering Inclusivity in AI Communities',
+        'Conclusion: Sustaining Growth and Cultivating Connections in the AI Community']
+            log(f"Mocked topics set")
+        else:
+            raise NotImplementedError
         apc.topics=self.topics
 
 

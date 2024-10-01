@@ -5,7 +5,8 @@ from pprint import pprint as pp
 import include.config.init_config as init_config 
 from include.Controller.Topics import Topics_Controller
 apc = init_config.apc
-
+log=apc.log
+apc.prompt = "Deeplearning.AI"
 class Section():
     def __init__(self):
         self.sections = {}
@@ -13,16 +14,21 @@ class Section():
 
     def set_sections(self, title_id, topic_id):
         self.sections[int(title_id)]={}
-        self.sections[int(title_id)][int(topic_id)] = ['''### Introduction: The Vision Behind DeepLearning.AI's Community Initiatives
-    At DeepLearning.AI, we envision a future where artificial intelligence 
-    flourishes through collaboration and active community engagement. 
-    Our mission is to cultivate a dynamic ecosystem that unites experts,
-     learners, and enthusiasts alike, empowering them to share knowledge and 
-    drive innovation together. By prioritizing partnerships and fostering 
-    inclusive initiatives, we strive to make AI accessible and impactful for 
-    everyone. In this blog, we invite you to explore the collaborative efforts 
-    that are nurturing a thriving AI community and inspiring the next generation 
-    of technological breakthroughs.''']  * 5
+        if apc.mock:
+            
+            self.sections[int(title_id)][int(topic_id)] = ['''### Introduction: The Vision Behind DeepLearning.AI's Community Initiatives
+        At DeepLearning.AI, we envision a future where artificial intelligence 
+        flourishes through collaboration and active community engagement. 
+        Our mission is to cultivate a dynamic ecosystem that unites experts,
+        learners, and enthusiasts alike, empowering them to share knowledge and 
+        drive innovation together. By prioritizing partnerships and fostering 
+        inclusive initiatives, we strive to make AI accessible and impactful for 
+        everyone. In this blog, we invite you to explore the collaborative efforts 
+        that are nurturing a thriving AI community and inspiring the next generation 
+        of technological breakthroughs.''']  * 5
+            log(f"Mocked Sections set")
+        else:
+            raise Exception("Not implemented")
         apc.sections=self.sections
 
 
@@ -131,7 +137,7 @@ class DesignPanel(wx.Panel,Sections_Controller):
         <body>
             <h1>Welcome to the Blog Designer</h1>
             <div id="input-container">
-                <textarea id="user-input" placeholder="Enter your prompt here">Deeplearning.AI</textarea>
+                <textarea id="user-input" placeholder="Enter your prompt here">%s</textarea>
                 
             </div>
             <div id="button"><button id="start-button" onclick="startButtonClicked()">Get Titles</button></div>
@@ -141,12 +147,12 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 function startButtonClicked() {
                     var userInput = document.getElementById('user-input').value;
                     document.getElementById('output').innerHTML = 'You entered: ' + userInput;
-                    window.location.href = 'app:start:0' + encodeURIComponent(userInput);
+                    window.location.href = 'app:start:' + encodeURIComponent(userInput);
                 }
             </script>
         </body>
         </html>
-        """
+        """ % apc.prompt
         self.web_view.SetPage(initial_html, "")
 
 
@@ -157,15 +163,30 @@ class DesignPanel(wx.Panel,Sections_Controller):
         if url.startswith("app:"):
             _, type,tid = url.split(":")
             
-            if type == "titles":
+            if type == "use_title":
                 tid=int(tid)
                 print(f"Title ID: {tid}")
                 assert len(apc.titles)>tid
-                pub.sendMessage("applog", log=f"Selected title: {apc.titles[tid]}")
+                log(f"Using title: {apc.titles[tid]}")
                 pub.sendMessage("use_title", tid=tid)
+            if type == "use_topic":
+                title_id,topic_id=tid.split("_")
+                title_id,topic_id= int(title_id), int(topic_id)
+                print(f"Title ID: {title_id}")
+                assert len(apc.titles)>int(title_id)
+                log(f"Using topic: {apc.topics[title_id][topic_id]}")
+                pub.sendMessage("use_topic", tid=int(title_id), toid=int(topic_id))
+            if type == "use_section":
+                title_id,topic_id, section_id=tid.split("_")
+                title_id,topic_id, section_id= int(title_id), int(topic_id), int(section_id)
+                print(f"Title ID: {title_id}")
+                assert len(apc.titles)>int(title_id)
+                log(f"Using section: {apc.sections[title_id][topic_id][section_id]}")
+                pub.sendMessage("use_section", tid=int(title_id), toid=int(topic_id), sid=int(section_id))
             elif type == "start":
-                pub.sendMessage("applog", log="design start")
-                pub.sendMessage("set_titles")
+                user_input=tid
+                log("design start")
+                pub.sendMessage("set_titles", user_input=user_input)
 
             elif type == "show_topics":
                 tid=int(tid)

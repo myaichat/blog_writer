@@ -4,33 +4,86 @@ import include.config.init_config as init_config
 
 apc = init_config.apc
 
-class Titles():
+class Blog():
     def __init__(self):
         self.set_blog()
 
     def set_blog(self):
-        self.blog = {'title': ''}
+        self.blog = {'title': {'name':'','topics':[]} }
 
     def get_blog(self):
         return self.blog
 
-    def __repr__(self):
-        return self.blog
+    def reset(self):
+        self.set_blog()
 class Blog_Controller():  
     def __init__(self):
-        self.blog = Titles()
+        self.blog = Blog()
+        self.title_html=''
+        self.topic_html=''
         pub.subscribe(self.use_title, "use_title")
-    def  use_title(self, tid):
+        pub.subscribe(self.use_topic, "use_topic")
+        pub.subscribe(self.reset_blog, "reset_blog")
+    def reset_blog(self, tid):
+        print(f"Resetting blog: {tid}")
+        self.blog.reset()
+        #self.set_titles()
+    def use_title(self, tid):
         print(f"Using title: {tid}")
         blog = self.blog.get_blog()
         title= apc.titles[tid]
-        blog['title'] = title
+        blog['title']['name'] = title
         
-        blog_html= "<table>"
-        for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
-            blog_html += f'<tr><td></td><td><b>{sname.capitalize()}</b><br><h2>{section}</h2></td></tr>'
-        blog_html += "</table>"
+        title_html= "<table>"
+        #for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
+        title_html += f'<tr><td></td><td><b>Title</b><br><h1>{title}</h1></td></tr>'
+        title_html += "</table>"
 
+        self.title_html=title_html
+        self.show_html()
+
+    def  use_topic(self, tid, toid):
+        print(f"Using topic: {tid}, {toid}")
+        topic= apc.topics[tid][toid]
+        #print(777777, topic)
+        
+        blog = self.blog.get_blog()
+
+        blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
+        
+        topic_html= "<table>"
+        for top in blog['title']['topics']: #<button onclick="testButtonClicked({sname})">del</button>
+            name=top['name']
+            assert name
+            title=top['title']
+            topic_html += f'<tr><td></td><td><b>Topic</b><br><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title: {title}</td></tr>'
+        topic_html += "</table>"
+        #print(999, topic_html)
+        self.topic_html=topic_html
+        self.show_html()
+
+    def  use_section(self, tid, toid):
+        print(f"Using topic: {tid}, {toid}")
+        topic= apc.topics[tid][toid]
+        #print(777777, topic)
+        
+        blog = self.blog.get_blog()
+
+        blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
+        
+        topic_html= "<table>"
+        for top in blog['title']['topics']: #<button onclick="testButtonClicked({sname})">del</button>
+            name=top['name']
+            assert name
+            title=top['title']
+            topic_html += f'<tr><td></td><td><b>Topic</b><br><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title: {title}</td></tr>'
+        topic_html += "</table>"
+        #print(999, topic_html)
+        self.topic_html=topic_html
+        self.show_html()
+
+    def show_html(self):
+        
         new_html = """
         <html>
         <body>
@@ -67,8 +120,7 @@ class Blog_Controller():
                 <a href="app:reset_blog:0">Reset</a>
             </div>
             %s
-
-            
+            %s
             <script>
                 function testButtonClicked(tid) {
                     console.log('Test button clicked', tid);
@@ -77,9 +129,10 @@ class Blog_Controller():
             </script>
         </body>
         </html>
-        """ % blog_html
+        """ % (self.title_html, self.topic_html)
         self.web_view.SetPage(new_html, "")
-    def set_titles(self):
+
+    def _set_titles(self):
         titles = self.titles.get_titles()
         print(f"Titles: {titles}")
         titles_html= "<table>"
@@ -183,7 +236,7 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
 
     def on_navigating(self, event):
         url = event.GetURL()
-        print(f"Blog Navigating to: {url}")
+        print(f"Blog Navigating to: {url[:50]}")
         if url.startswith("app:"):
             _, type,payload = url.split(":")
             if type == "set_title":
@@ -191,7 +244,8 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
                 print(f"Setting title: {title}")
             if type == "reset_blog":
                 title= self.decode(payload)
-                print(f"Resetting blog: {title}")  
+                print(f"Resetting blog: {title}") 
+                self.blog.reset() 
                 self.set_initial_content()              
             event.Veto()  # Prevent actual navigation for our custom scheme
 

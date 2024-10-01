@@ -9,7 +9,7 @@ import include.config.init_config as init_config
 init_config.init(**{})
 apc = init_config.apc
 
-
+apc.mock = True
 
 
 class WorkbookPanel(wx.Panel):
@@ -55,6 +55,7 @@ class WorkbookPanel(wx.Panel):
 class MyApp(wx.Frame):
     def __init__(self):
         super().__init__(parent=None, title='Blog Designer')
+        self.config = wx.Config("MyAppSettings")
         panel = wx.Panel(self)
         
         blog_panel = BlogPanel(panel)
@@ -70,10 +71,35 @@ class MyApp(wx.Frame):
         panel.SetSizer(sizer)
 
         
+        self.restore_layout()
 
-        self.SetSize((1600, 1000))
+        # Bind the close event to save the layout when the window is closed
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Show()
+    def restore_layout(self):
+        """Restore the layout and UI component states using wx.Config."""
+        size = self.config.Read("window_size", "800,600").split(',')
+        position = self.config.Read("window_position", "50,50").split(',')
+        text_value = self.config.Read("text_ctrl_value", "Default text")
 
+        # Restore window size and position
+        self.SetSize((int(size[0]), int(size[1])))
+        self.SetPosition((int(position[0]), int(position[1])))
+    def on_close(self, event):
+        """Save layout and UI component states using wx.Config."""
+        size = self.GetSize()
+        position = self.GetPosition()
+
+        self.config.Write("window_size", f"{size[0]},{size[1]}")
+        self.config.Write("window_position", f"{position[0]},{position[1]}")
+        
+        
+        #self.config.WriteInt("splitter_position", self.splitter.GetSashPosition())
+
+        self.config.Flush()  # Ensure the config data is written to disk
+
+        # Proceed with closing the window
+        self.Destroy()
 
 
 if __name__ == '__main__':

@@ -2,21 +2,27 @@
 import wx
 from pubsub import pub
 from pprint import pprint as pp 
+class notImplementedError(Exception):
+    pass
 
 import include.config.init_config as init_config 
 
 apc = init_config.apc
-
+log=apc.log
 class Title():
     def __init__(self):
         self.set_titles()
 
     def set_titles(self):
-        self.titles = [ "Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
-        "Empowering the Next Generation: DeepLearning.AI's Role in AI Education and Workforce Development",
-        "Leading the Way: Groundbreaking Research and Innovations from DeepLearning.AI",
-        "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI",
-        "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]
+        if apc.mock:
+            self.titles = [ "Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
+            "Empowering the Next Generation: DeepLearning.AI's Role in AI Education and Workforce Development",
+            "Leading the Way: Groundbreaking Research and Innovations from DeepLearning.AI",
+            "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI",
+            "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]
+            log('Mock Titles set')
+        else:
+            raise NotImplementedError
         apc.titles=self.titles
 
     def get_titles(self):
@@ -35,27 +41,27 @@ class Titles_Controller():
         pub.subscribe(self.set_titles, "set_titles")
         pub.subscribe(self.display_html, "display_html")
 
-    def set_titles(self):
+    def set_titles(self, user_input):
         self.titles = self.title.get_titles()
-    
-        print(f"Titles: {self.titles}")
+        apc.prompt=user_input
+        #print(f"Titles: {self.titles}")
         self.display_html()
     def display_html(self):
-        print("Titles_Controller: display_html")
-        titles_html= """<h3 class="left-align"> Generated:</h3>
+        #print("Titles_Controller: display_html")
+        titles_html= """<button id="titles-button"  onclick="showTitles({tid},{toid})" style="position: absolute; left: 0;">Titles</button>
 <table>"""
         for tid, title in enumerate(self.titles):
             print   (f"display_html: Title: {tid}. {title}")
 
             if tid in self.topic.topics:
-                print(f"display_html: topic.topics: {tid}")
+                #print(f"display_html: topic.topics: {tid}")
                 #exit(   )
                 topics = self.topic.topics[tid]
                 topics_html ="<table>"
 
                 
                 for toid, topic in enumerate(topics):
-                    print(f"display_html: Title: {tid} Topic: {toid}. {topic}")  
+                    #print(f"display_html: Title: {tid} Topic: {toid}. {topic}")  
 
                     if tid in self.section.sections:
                         section_html = "<table>"
@@ -82,7 +88,7 @@ class Titles_Controller():
                 topics_html +="</table>"
             else:
                 topics_html = "No topics"
-            titles_html += f'''<tr><td ><button id="yel-button"  onclick="testButtonClicked({tid})"><<<</button></td>
+            titles_html += f'''<tr><td ><button id="yel-button"  onclick="useTitle({tid})"><<<</button></td>
             <td><span class="black_border">{title}</span></tr>
             <tr><td></td><td > <button id="topics-button"  onclick="topicsButtonClicked({tid})">topics</button><br>
             {topics_html}
@@ -130,6 +136,15 @@ class Titles_Controller():
                     resize: vertical;
                     margin-right: 10px;
                 }
+                #titles-button { 
+                    padding: 2px 5px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    background-color: #3C3C3C ;
+                    color: white;
+                    border: none;
+                    border-radius: 2px;
+                }                
                 #topics-button { 
                     padding: 2px 5px;
                     font-size: 16px;
@@ -143,7 +158,7 @@ class Titles_Controller():
                     padding: 2px 5px;
                     font-size: 16px;
                     cursor: pointer;
-                    background-color: pink ;
+                    background-color: #A9A9A9 ;
                     color: white;
                     border: none;
                     border-radius: 2px;
@@ -232,7 +247,7 @@ class Titles_Controller():
         <body>
             <pre>
                 <div id="header-container">
-                <h1>Titles</h1>
+                <h1>%s</h1>
                <button id="reset-button"  onclick="resetButtonClicked()">Reset</button>
             </div>
             %s
@@ -241,9 +256,9 @@ class Titles_Controller():
             
             </pre>
             <script>
-                function testButtonClicked(tid) {
+                function useTitle(tid) {
                     console.log('Test button clicked', tid);
-                    window.location.href = 'app:titles:'+tid;
+                    window.location.href = 'app:use_title:'+tid;
                 }
                 function topicsButtonClicked(tid, toid) {
                     console.log('topics button clicked', tid);
@@ -268,5 +283,5 @@ class Titles_Controller():
             </script>
         </body>
         </html>
-        """ % titles_html
+        """ % (apc.prompt, titles_html)
         self.web_view.SetPage(new_html, "")  
