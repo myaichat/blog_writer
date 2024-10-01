@@ -108,7 +108,7 @@ class Blog_Controller():
         self.web_view.SetPage(new_html, "")  
 
 class Blog_WebViewPanel(wx.Panel, Blog_Controller):
-    def __init__(self, parent):
+    def __init__(self, parent,):
         super().__init__(parent)
         Blog_Controller.__init__(self)
         
@@ -127,7 +127,7 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
 
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.web_view, 1, wx.EXPAND)
+        sizer.Add(self.web_view, 1, wx.EXPAND,0)
         self.SetSizer(sizer)
 
     def attach_custom_scheme_handler(self):
@@ -226,6 +226,6 @@ class BlogPanel(wx.Panel):
         self.notebook.AddPage(self.web_view_panel, "Blog")
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)
         
         panel.SetSizer(main_sizer)

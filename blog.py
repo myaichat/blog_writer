@@ -3,7 +3,7 @@ import wx.html2
 from pubsub import pub
 from include.BlogPanel import BlogPanel
 from include.LogPanel import LogPanel 
-from include.TitlePanel import TitlePanel  
+from include.DesignPanel import DesignPanel  
 import include.config.init_config as init_config 
 
 init_config.init(**{})
@@ -12,7 +12,7 @@ apc = init_config.apc
 
 
 
-class DesignPanel(wx.Panel):
+class WorkbookPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
         panel = self #wx.Panel(self)
@@ -20,7 +20,7 @@ class DesignPanel(wx.Panel):
         self.notebook = wx.Notebook(panel)
 
         # Create an instance of WebViewPanel
-        self.web_view_panel = TitlePanel(self.notebook)
+        self.web_view_panel = DesignPanel(self.notebook)
 
         # Add the WebViewPanel to the notebook with the label "Titles"
         self.notebook.AddPage(self.web_view_panel, "Design")
@@ -57,19 +57,21 @@ class MyApp(wx.Frame):
         super().__init__(parent=None, title='Blog Designer')
         panel = wx.Panel(self)
         
-        self.blog_panel = BlogPanel(panel)
+        blog_panel = BlogPanel(panel)
+        blog_panel.SetMinSize((400, -1))
         #self.notebook.AddPage(blog_panel, "Blog")
-        design_panel = DesignPanel(panel)
+        design_panel = WorkbookPanel(panel)
         log_panel = LogPanel(panel)
+        log_panel.SetMinSize((400, -1))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.blog_panel, 1, wx.EXPAND)
-        sizer.Add(design_panel, 1, wx.EXPAND)
-        sizer.Add(log_panel, 1, wx.EXPAND)
+        sizer.Add(blog_panel, 0, wx.EXPAND, 0)
+        sizer.Add(design_panel, 1, wx.EXPAND,0)
+        sizer.Add(log_panel, 0, wx.EXPAND,0)
         panel.SetSizer(sizer)
 
         
 
-        self.SetSize((1200, 1000))
+        self.SetSize((1600, 1000))
         self.Show()
 
 

@@ -1,6 +1,5 @@
 import wx
 import wx.html2
-
 class WebViewPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -46,20 +45,36 @@ class WebViewPanel(wx.Panel):
                     width: 300px;
                     padding: 5px;
                 }
-                #input-container { margin: 20px 0; }
+                #input-container { 
+                    margin: 20px 0;
+                    display: flex;
+                    align-items: flex-start;
+                }
                 #user-input {
                     width: 300px;
                     height: 100px;
                     padding: 5px;
                     resize: vertical;
+                    margin-right: 10px;
                 }
-                #start-button { padding: 5px 10px; vertical-align: top; }
+                #start-button { 
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                }
+                #start-button:hover {
+                    background-color: #45a049;
+                }
             </style>
         </head>
         <body>
             <div id="header-container">
                 <h1>Welcome to the WebView Panel!</h1>
-                (<a href="app:show_start:0">Reset</a>)
+                <input type="text" id="url-input" placeholder="Enter URL here">
             </div>
             <div id="input-container">
                 <textarea id="user-input" placeholder="Enter your text here"></textarea>

@@ -54,7 +54,7 @@ class Log_WebViewPanel(wx.Panel,AppLog_Controller):
 
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.web_view, 1, wx.EXPAND)
+        sizer.Add(self.web_view, 1, wx.EXPAND, 0)
         self.SetSizer(sizer)
 
     def attach_custom_scheme_handler(self):
@@ -112,6 +112,6 @@ class LogPanel(wx.Panel):
         self.notebook.AddPage(self.web_view_panel, "App Log")
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)
         
         panel.SetSizer(main_sizer)
