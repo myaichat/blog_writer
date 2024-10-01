@@ -59,7 +59,7 @@ class MyApp(wx.Frame):
         panel = wx.Panel(self)
         
         blog_panel = BlogPanel(panel)
-        blog_panel.SetMinSize((400, -1))
+        blog_panel.SetMinSize((500, -1))
         #self.notebook.AddPage(blog_panel, "Blog")
         design_panel = WorkbookPanel(panel)
         log_panel = LogPanel(panel)

@@ -1,9 +1,10 @@
 import wx
 from pubsub import pub
+from pprint import pprint as pp 
 import include.config.init_config as init_config 
 
 apc = init_config.apc
-
+log=apc.log
 class Blog():
     def __init__(self):
         self.set_blog()
@@ -24,6 +25,7 @@ class Blog_Controller():
         pub.subscribe(self.use_title, "use_title")
         pub.subscribe(self.use_topic, "use_topic")
         pub.subscribe(self.reset_blog, "reset_blog")
+    
     def reset_blog(self, tid):
         print(f"Resetting blog: {tid}")
         self.blog.reset()
@@ -36,34 +38,52 @@ class Blog_Controller():
         
         title_html= "<table>"
         #for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
-        title_html += f'<tr><td></td><td><b>Title</b><br><h1>{title}</h1></td></tr>'
+        title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>
+        '''
         title_html += "</table>"
 
         self.title_html=title_html
         self.show_html()
-
+    
     def  use_topic(self, tid, toid):
         print(f"Using topic: {tid}, {toid}")
         topic= apc.topics[tid][toid]
         #print(777777, topic)
         
         blog = self.blog.get_blog()
+        for top in blog['title']['topics']:
+            top['active']=False
+            if top['title']['tid'] == tid and top['toid']==toid:
+                log('Topic is already used')
+                return
+        blog['title']['topics'].append({'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
+        topic_html= self.get_topic_html(blog)
 
-        blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
-        
-        topic_html= "<table>"
-        for top in blog['title']['topics']: #<button onclick="testButtonClicked({sname})">del</button>
-            name=top['name']
-            assert name
-            title=top['title']
-            topic_html += f'<tr><td></td><td><b>Topic</b><br><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title: {title}</td></tr>'
-        topic_html += "</table>"
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()
+    def get_topic_html(self, blog):
+        topic_html= "<table>"
+        for top in blog['title']['topics']: #<button onclick="testButtonClicked({sname})">del</button>
+            top_id=top['toid'] 
+            title_id=top['title']['tid'] 
+            name=top['name']
+            assert name
+            title=top['title']['name']
+            active=top['active']    
+            active_btn = '<span style="color: #FF6666;">Active</span>'
+            if not active:
+                active_btn= f'<button id="activate-button"  onclick="activateTopic({title_id},{top_id})">Activate</button>'
+            
+            topic_html += f'<tr><td style="vertical-align: top;" >Topic<br>{top_id}<br>{active_btn}</td><td><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title {title_id}: {title}</td></tr>'
+            #add sections here 
+            if active:
+                topic_html += f'<tr><td colspan=2><span style="color: #FF6666;">New Topic goes here -- >>> </span></td></tr>'
+        topic_html += "</table>"
 
-    def  use_section(self, tid, toid):
-        print(f"Using topic: {tid}, {toid}")
+        return topic_html        
+    def  use_section(self, tid, toid, sid):
+        print(f"Using topic: {tid}, {toid}, {sid}")
         topic= apc.topics[tid][toid]
         #print(777777, topic)
         
@@ -71,13 +91,8 @@ class Blog_Controller():
 
         blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
         
-        topic_html= "<table>"
-        for top in blog['title']['topics']: #<button onclick="testButtonClicked({sname})">del</button>
-            name=top['name']
-            assert name
-            title=top['title']
-            topic_html += f'<tr><td></td><td><b>Topic</b><br><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title: {title}</td></tr>'
-        topic_html += "</table>"
+        topic_html= self.get_topic_html(blog)
+
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()
@@ -88,7 +103,19 @@ class Blog_Controller():
         <html>
         <body>
     <head>
+    
             <style>
+               #activate-button { 
+                   
+
+                    padding: 2px 5px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    background-color: #90EE90  ;
+                    color: black;
+                    border: none;
+                    border-radius: 2px;
+                }            
                 body { font-family: Arial, sans-serif; }
                 #header-container {
                     display: flex;
@@ -127,6 +154,12 @@ class Blog_Controller():
                     window.location.href = 'app:titles:'+tid;
                 }
             </script>
+            <script>
+                function activateTopic(tid, toid) {
+                    console.log('activateTopic button clicked', tid, toid);
+                    window.location.href = 'app:activate_topic:'+tid+'_' + toid;
+                }
+            </script>            
         </body>
         </html>
         """ % (self.title_html, self.topic_html)
@@ -160,6 +193,21 @@ class Blog_Controller():
         """ % titles_html
         self.web_view.SetPage(new_html, "")  
 
+    def activate_topic(self, tid, toid):
+        print(f"activate_topic: {tid, toid}")
+        blog = self.blog.get_blog()
+        for top in blog['title']['topics']:
+            top['active']=False
+            if top['title']['tid'] == tid and top['toid']==toid:
+                top['active']=True
+        
+        pp(blog)
+        
+        topic_html= self.get_topic_html(blog)
+
+        #print(999, topic_html)
+        self.topic_html=topic_html
+        self.show_html()
 class Blog_WebViewPanel(wx.Panel, Blog_Controller):
     def __init__(self, parent,):
         super().__init__(parent)
@@ -182,10 +230,12 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)
         self.SetSizer(sizer)
+    def actiate_topic(self, tid, toid):
+        print(f"activate_topic: {tid, toid}")
+        self.activate_topic(tid, toid)
 
-    def attach_custom_scheme_handler(self):
-        handler = CustomSchemeHandler_Blog(self)
-        self.web_view.RegisterHandler(handler)
+        
+
 
     def set_initial_content(self):
         initial_html = """
@@ -246,25 +296,20 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
                 title= self.decode(payload)
                 print(f"Resetting blog: {title}") 
                 self.blog.reset() 
-                self.set_initial_content()              
+                self.set_initial_content()  
+            if type == "activate_topic":
+                tid, toid = payload.split("_")
+                tid, toid = int(tid), int(toid)
+                #title= self.decode(payload)
+                print(f"activate_topic: {tid, toid}")
+                self.actiate_topic(tid, toid)   
+            
             event.Veto()  # Prevent actual navigation for our custom scheme
 
     def on_webview_error(self, event):
         print(f"WebView error: {event.GetString()}")
 
-class CustomSchemeHandler_Blog(wx.html2.WebViewHandler):
-    def __init__(self, web_view_panel):
-        wx.html2.WebViewHandler.__init__(self, "app")
-        self.web_view_panel = web_view_panel
 
-    def OnRequest(self, webview, request):
-        print(f"OnRequest called with URL: {request.GetURL()}")
-        if request.GetResourceType() == wx.html2.WEBVIEW_RESOURCE_TYPE_MAIN_FRAME:
-            if request.GetURL() == "app:test":
-                wx.CallAfter(self.web_view_panel.on_test_button)
-            elif request.GetURL() == "app:url_test":
-                wx.CallAfter(self.web_view_panel.on_url_test)
-        return None
 
 class BlogPanel(wx.Panel):
     def __init__(self, parent):

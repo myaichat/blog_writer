@@ -77,7 +77,7 @@ class Log_WebViewPanel(wx.Panel,AppLog_Controller):
 
     def on_navigating(self, event):
         url = event.GetURL()
-        print(f"Log Navigating to: {url}")
+        print(f"Log Navigating to: {url[:50]}")
         if url.startswith("app:"):
             event.Veto()  # Prevent actual navigation for our custom scheme
 
