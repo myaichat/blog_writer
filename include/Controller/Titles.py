@@ -81,7 +81,7 @@ class Titles_Controller():
                     topics_html += f'''<tr><td class="td-cell"><button id="use-button"  onclick="useTopic({tid},{toid})"><<<</button></td>
                     <td> </td><td><span class="purple-border">{topic}</span>
                     <br>
-                    <button id="sections-button"  onclick="sectionsButtonClicked({tid},{toid})">sections</button><br>
+                    <button id="sections-button"  onclick="sectionsButtonClicked({tid},{toid})">sections</button> <a id="topic_{tid}_{toid}"></a><br>
                     {section_html}
                     </td></tr>''' 
                 
@@ -90,7 +90,7 @@ class Titles_Controller():
                 topics_html = "No topics"
             titles_html += f'''<tr><td ><button id="yel-button"  onclick="useTitle({tid})"><<<</button></td>
             <td><span class="black_border">{title}</span></tr>
-            <tr><td></td><td > <button id="topics-button"  onclick="topicsButtonClicked({tid})">topics</button><br>
+            <tr><td></td><td > <button id="topics-button"  onclick="topicsButtonClicked({tid})">topics</button> <a id="title_{tid}"></a><br>
             {topics_html}
             </td></tr>'''
         titles_html += "</table>"
@@ -248,6 +248,7 @@ class Titles_Controller():
             <pre>
                 <div id="header-container">
                 <h1>%s</h1>
+                 <button id="reset-button"  onclick="jumpButtonClicked()">Jump</button>
                <button id="reset-button"  onclick="resetButtonClicked()">Reset</button>
             </div>
             %s
@@ -268,6 +269,10 @@ class Titles_Controller():
                     console.log('reset button clicked');
                     window.location.href = 'app:show_start:0';
                 }  
+                function jumpButtonClicked() {
+                    console.log('reset button clicked');
+                    window.location.href = 'app:jump:0';
+                }                 
                 function sectionsButtonClicked(tid, toid) {
                     console.log('sections button clicked');
                     window.location.href = 'app:show_sections:'+tid+'_'   +toid;

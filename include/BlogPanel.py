@@ -24,6 +24,7 @@ class Blog_Controller():
         self.topic_html=''
         pub.subscribe(self.use_title, "use_title")
         pub.subscribe(self.use_topic, "use_topic")
+        pub.subscribe(self.use_section, "use_section")
         pub.subscribe(self.reset_blog, "reset_blog")
     
     def reset_blog(self, tid):
@@ -51,12 +52,22 @@ class Blog_Controller():
         #print(777777, topic)
         
         blog = self.blog.get_blog()
-        for top in blog['title']['topics']:
-            top['active']=False
+        active_tid=None
+        for ttid, top in enumerate(blog['title']['topics']):
             if top['title']['tid'] == tid and top['toid']==toid:
                 log('Topic is already used')
-                return
-        blog['title']['topics'].append({'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
+                return            
+            if top['active']:
+                active_tid=ttid
+                
+            top['active']=False
+            #deactivate sections
+            for sec in top['sections']:
+                sec['active']=False
+        if active_tid is not None:
+                blog['title']['topics'].insert(active_tid+1, {'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
+        else:
+            blog['title']['topics'].append({'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
         topic_html= self.get_topic_html(blog)
 
         #print(999, topic_html)
@@ -77,24 +88,52 @@ class Blog_Controller():
             
             topic_html += f'<tr><td style="vertical-align: top;" >Topic<br>{top_id}<br>{active_btn}</td><td><b style="font-size: 20px;">{name}</b></td></tr><tr><td></td><td style="padding-left: 20px;">Title {title_id}: {title}</td></tr>'
             #add sections here 
+            section_html='<table>'
+            for sec in top['sections']:
+                sec_id=sec['sid']
+                sec_name=sec['name']
+                sec_active=sec['active']
+                sec_title_id=sec['title']['tid']
+                sec_title=sec['title']['name']
+                sec_topic_id=sec['topic']['toid']
+                sec_topic=sec['topic']['name']
+                sec_active_btn = '<span style="color: #FF6666;">Active</span><br><span style="color: #FF6666;">New Section goes here -- >>> </span>'
+                if not sec_active:
+                    sec_active_btn= f'<button id="activate-button"  onclick="activateSection({title_id},{top_id},{sec_id})">Activate</button>'
+                                
+                    
+                section_html += f'<tr><td></td><td >Section {sec_id}: <b style="font-size: 16px;">{sec_name} </b>{sec_active_btn}</td></tr>'
+                section_html += f'<tr><td></td><td style="padding-left: 10px;">Title {sec_title_id}: {sec_title}</td></tr>'
+                section_html += f'<tr><td></td><td style="padding-left: 20px;">Topic {sec_topic_id}: {sec_topic}</td></tr>'
+            section_html += '</table>'
+
+            topic_html +=  f'<tr><td></td><td>{section_html}</td></tr>'
             if active:
                 topic_html += f'<tr><td colspan=2><span style="color: #FF6666;">New Topic goes here -- >>> </span></td></tr>'
         topic_html += "</table>"
 
         return topic_html        
     def  use_section(self, tid, toid, sid):
-        print(f"Using topic: {tid}, {toid}, {sid}")
-        topic= apc.topics[tid][toid]
-        #print(777777, topic)
-        
-        blog = self.blog.get_blog()
+        print(f"Using section: {tid}, {toid}, {sid}")
+        if 1:
+            topic= apc.topics[tid][toid]
+            #print(777777, topic)
+            section= apc.sections[tid][toid][sid]
+            blog = self.blog.get_blog()
+            #get active blog topic
+            for top in blog['title']['topics']:
+                if top['active']:
+                    #deactivate all sections
+                    for sec in top['sections']:
+                        sec['active']=False
+                    top['sections'].append({'sid':sid,'name':section, 'active':True, 'title': {'tid':tid,'name':apc.titles[tid]}, 'topic': {'toid':toid,'name':topic}})  
+            #blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
+            
+            topic_html= self.get_topic_html(blog)
 
-        blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
-        
-        topic_html= self.get_topic_html(blog)
-
-        #print(999, topic_html)
-        self.topic_html=topic_html
+            #print(999, topic_html)
+            self.topic_html=topic_html
+            pp(blog['title']['topics'])
         self.show_html()
 
     def show_html(self):
@@ -159,7 +198,13 @@ class Blog_Controller():
                     console.log('activateTopic button clicked', tid, toid);
                     window.location.href = 'app:activate_topic:'+tid+'_' + toid;
                 }
-            </script>            
+            </script>    
+            <script>
+                function activateSection(tid, toid, sid) {
+                    console.log('activateSection button clicked', tid, toid, sid);
+                    window.location.href = 'app:activate_section:'+tid+'_' + toid + '_' + sid;
+                }
+            </script>                     
         </body>
         </html>
         """ % (self.title_html, self.topic_html)
@@ -198,8 +243,14 @@ class Blog_Controller():
         blog = self.blog.get_blog()
         for top in blog['title']['topics']:
             top['active']=False
+            #deactivate sections too
+            for sec in top['sections']:
+                sec['active']=False
             if top['title']['tid'] == tid and top['toid']==toid:
                 top['active']=True
+                #activate last section
+                if top['sections']:
+                    top['sections'][-1]['active']=True
         
         pp(blog)
         
@@ -208,6 +259,25 @@ class Blog_Controller():
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()
+    def activate_section(self, tid, toid, sid):
+        print(f"activate_section: {tid, toid}")
+        blog = self.blog.get_blog()
+        for top in blog['title']['topics']:
+            top['active']=False
+            if top['title']['tid'] == tid and top['toid']==toid:
+                top['active']=True
+                for sec in top['sections']:
+                    sec['active']=False
+                    if sec['sid'] == sid:
+                        sec['active']=True
+        
+        pp(blog)
+        
+        topic_html= self.get_topic_html(blog)
+
+        #print(999, topic_html)
+        self.topic_html=topic_html
+        self.show_html()        
 class Blog_WebViewPanel(wx.Panel, Blog_Controller):
     def __init__(self, parent,):
         super().__init__(parent)
@@ -217,7 +287,7 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
         self.web_view = wx.html2.WebView.New(self)
         
         # Attach custom scheme handler
-        self.attach_custom_scheme_handler()
+        #self.attach_custom_scheme_handler()
 
         # Bind navigation and error events
         self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATING, self.on_navigating)
@@ -230,9 +300,7 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)
         self.SetSizer(sizer)
-    def actiate_topic(self, tid, toid):
-        print(f"activate_topic: {tid, toid}")
-        self.activate_topic(tid, toid)
+
 
         
 
@@ -302,8 +370,13 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
                 tid, toid = int(tid), int(toid)
                 #title= self.decode(payload)
                 print(f"activate_topic: {tid, toid}")
-                self.actiate_topic(tid, toid)   
-            
+                self.activate_topic(tid, toid)   
+            if type == "activate_section":
+                tid, toid, sid = payload.split("_")
+                tid, toid, sid = int(tid), int(toid), int(sid)
+                #title= self.decode(payload)
+                print(f"activate_section: {tid, toid, sid}")
+                self.activate_section(tid, toid, sid)             
             event.Veto()  # Prevent actual navigation for our custom scheme
 
     def on_webview_error(self, event):

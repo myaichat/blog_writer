@@ -51,3 +51,7 @@ class Topics_Controller(Titles_Controller):
         #print(f"topics: {self.topics}")
         #Titles_Controller.display_html(self)
         pub.sendMessage("display_html")
+
+        self.display_html()
+        self.web_view.RunScriptAsync(f"window.location.href = '#title_{title_id}';")
+        

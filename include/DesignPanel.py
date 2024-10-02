@@ -55,6 +55,8 @@ class Sections_Controller(Topics_Controller):
         #print(f"topics: {self.topics}")
         pub.sendMessage("display_html")
         print(f"end of set_sections")
+        #self.display_html()
+        self.web_view.RunScriptAsync(f"window.location.href = '#topic_{title_id}_{topic_id}';")
 
          
       
@@ -199,7 +201,12 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 pub.sendMessage("set_sections", title_id=int(title_id), topic_id=int(topic_id))  
 
             elif type == "show_start":
-                self.set_initial_content()                
+                self.set_initial_content()  
+
+            elif type == "jump":
+                print(f"Jumping to: {tid}") 
+                self.web_view.RunScriptAsync("window.location.href = '#topic_3_1';")
+
             event.Veto()  # Prevent actual navigation for our custom scheme
 
     def on_webview_error(self, event):
