@@ -7,7 +7,9 @@ class AppLog_Controller():
     def __init__(self):
         self.set_log()
         pub.subscribe(self.on_log, "applog")
-    def on_log(self, msg):
+    def on_log(self, msg, type):
+        if type == "error":
+            msg = f'<span style="color:red">{msg}</span>'
         self.applog.append(msg)
         self.refresh_log()
     def set_log(self):

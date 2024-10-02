@@ -78,19 +78,27 @@ class Titles_Controller():
                         section_html +="</table>"
                     else:
                         section_html = "No sections"
+                    topic_border='black_border'
+                    print(f"---------------------------------expanded_topic: {apc.expanded_topic} toid: {toid}")
+                    if apc.expanded_title == tid and apc.expanded_topic == toid:
+                        topic_border='fancy-border'
+
                     topics_html += f'''<tr><td class="td-cell"><button id="use-button"  onclick="useTopic({tid},{toid})"><<<</button></td>
-                    <td> </td><td><span class="purple-border">{topic}</span>
+                    <td> </td><td><a id="topic_{tid}_{toid}"></a><span class="{topic_border}">{topic}</span>
                     <br>
-                    <button id="sections-button"  onclick="sectionsButtonClicked({tid},{toid})">sections</button> <a id="topic_{tid}_{toid}"></a><br>
+                    <button id="sections-button"  onclick="sectionsButtonClicked({tid},{toid})">sections</button> <br>
                     {section_html}
                     </td></tr>''' 
                 
                 topics_html +="</table>"
             else:
                 topics_html = "No topics"
+            title_border='black_border'
+            if apc.expanded_title == tid:
+                title_border='fancy-border'
             titles_html += f'''<tr><td ><button id="yel-button"  onclick="useTitle({tid})"><<<</button></td>
-            <td><span class="black_border">{title}</span></tr>
-            <tr><td></td><td > <button id="topics-button"  onclick="topicsButtonClicked({tid})">topics</button> <a id="title_{tid}"></a><br>
+            <td><a id="title_{tid}"></a><span class="{title_border}">{title}</span></tr>
+            <tr><td></td><td > <button id="topics-button"  onclick="topicsButtonClicked({tid})">topics</button> <br>
             {topics_html}
             </td></tr>'''
         titles_html += "</table>"
@@ -196,7 +204,19 @@ class Titles_Controller():
                 }
                 #yel-button:hover {
                     background-color: #45a049;
-                }                
+                } 
+                #preview-button { 
+                    padding: 2px 5px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    background-color: green ;
+                    color: white;
+                    border: none;
+                    border-radius: 2px;
+                }
+                #preview-button:hover {
+                    background-color: #45a049;
+                }                               
                 #reset-button { 
                     padding: 2px 5px;
                     font-size: 16px;
@@ -248,7 +268,7 @@ class Titles_Controller():
             <pre>
                 <div id="header-container">
                 <h1>%s</h1>
-                 <button id="reset-button"  onclick="jumpButtonClicked()">Jump</button>
+                 <button id="preview-button"  onclick="previewButtonClicked()">Preview</button>
                <button id="reset-button"  onclick="resetButtonClicked()">Reset</button>
             </div>
             %s
@@ -269,9 +289,9 @@ class Titles_Controller():
                     console.log('reset button clicked');
                     window.location.href = 'app:show_start:0';
                 }  
-                function jumpButtonClicked() {
+                function previewButtonClicked() {
                     console.log('reset button clicked');
-                    window.location.href = 'app:jump:0';
+                    window.location.href = 'app:preview:0';
                 }                 
                 function sectionsButtonClicked(tid, toid) {
                     console.log('sections button clicked');

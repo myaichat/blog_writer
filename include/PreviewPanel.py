@@ -7,7 +7,7 @@ apc = init_config.apc
 log=apc.log
 apc.used_section=None
 apc.used_section    =None
-class Blog():
+class Preview():
     def __init__(self):
         self.set_blog()
 
@@ -19,9 +19,9 @@ class Blog():
 
     def reset(self):
         self.set_blog()
-class Blog_Controller():  
+class Preview_Controller():  
     def __init__(self):
-        self.blog = Blog()
+        self.blog = Preview()
         self.title_html=''
         self.topic_html=''
         pub.subscribe(self.use_title, "use_title")
@@ -41,8 +41,8 @@ class Blog_Controller():
         
         title_html= "<table>"
         #for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
-        title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>
-        '''
+        #title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>'''
+        title_html += f'''<tr><td></td><td><br><b style="font-size: 26px;">{title}</b></td></tr>'''
         title_html += "</table>"
 
         self.title_html=title_html
@@ -97,9 +97,14 @@ class Blog_Controller():
             if apc.used_topic == ttoid:
                 topic_border='fancy-border'
             #print('//////////////////////////////////////////////////', top_id, apc.used_topic, topic_border)
-            topic_html += f'''<tr><td style="vertical-align: top;" >Topic<br>{top_id}<br>{active_btn} <a id="topic_{title_id}_{top_id}"></a></td>
+            if 0:
+                topic_html += f'''<tr><td style="vertical-align: top;" >Topic<br>{top_id}<br>{active_btn} <a id="topic_{title_id}_{top_id}"></a></td>
             <td><span class="{topic_border}"><b style="font-size: 20px;">{name}</b></span></td></tr>
             <tr><td></td><td style="padding-left: 20px;">Title {title_id}: {title}</td></tr>'''
+            else:
+                topic_html += f'''<tr><td style="vertical-align: top;" ><a id="topic_{title_id}_{top_id}"></a></td>
+            <td><b style="font-size: 20px;">{name}</b></td></tr>
+            '''                
             #add sections here 
             section_html='<table>'
             for ssid,sec in enumerate(top['sections']):
@@ -117,13 +122,16 @@ class Blog_Controller():
                 if apc.used_section == ssid:
                     sec_border='fancy-border'              
                     
-                section_html += f'<tr><td></td><td ><span class="{topic_border}"> Section {sec_id}: <b style="font-size: 16px;">{sec_name} </b></span>{sec_active_btn}</td></tr>'
-                section_html += f'<tr><td></td><td style="padding-left: 10px;">Title {sec_title_id}: {sec_title}</td></tr>'
-                section_html += f'<tr><td></td><td style="padding-left: 20px;">Topic {sec_topic_id}: {sec_topic}</td></tr>'
+                #section_html += f'<tr><td></td><td ><span class="{topic_border}"> Section {sec_id}: <b style="font-size: 16px;">{sec_name} </b></span>{sec_active_btn}</td></tr>'
+                section_html += f'<tr><td></td><td > <span style="font-size: 16px;">{sec_name} </span></td></tr>'
+                #section_html += f'<tr><td></td><td style="padding-left: 10px;">Title {sec_title_id}: {sec_title}</td></tr>'
+                #section_html += f'<tr><td></td><td style="padding-left: 10px;">{sec_title}</td></tr>'
+                #section_html += f'<tr><td></td><td style="padding-left: 20px;">Topic {sec_topic_id}: {sec_topic}</td></tr>'
+                #section_html += f'<tr><td></td><td style="padding-left: 20px;">{sec_topic}</td></tr>'
             section_html += '</table>'
 
             topic_html +=  f'<tr><td></td><td>{section_html}</td></tr>'
-            if active:
+            if 0 and active:
                 topic_html += f'<tr><td colspan=2><span style="color: #FF6666;">New Topic goes here -- >>> </span></td></tr>'
         topic_html += "</table>"
 
@@ -218,7 +226,8 @@ class Blog_Controller():
         <body>
             <pre>
                 <div id="header-container">
-                <h1>Design</h1><a href="app:show_preview:0">Preview</a>
+                <h1>Blog</h1>
+                <a href="app:show_explore:0">Explore</a>
                 <a href="app:reset_blog:0">Reset</a>
             </div>
             %s
@@ -290,10 +299,10 @@ class Blog_Controller():
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()        
-class Blog_WebViewPanel(wx.Panel, Blog_Controller):
+class Preview_WebViewPanel(wx.Panel, Preview_Controller):
     def __init__(self, parent,):
         super().__init__(parent)
-        Blog_Controller.__init__(self)
+        Preview_Controller.__init__(self)
         
         # Create the WebView control
         self.web_view = wx.html2.WebView.New(self)
@@ -302,8 +311,8 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
         #self.attach_custom_scheme_handler()
 
         # Bind navigation and error events
-        self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATING, self.on_navigating)
-        self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
+        self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATING, self.on_navigation_request)
+        #self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
 
         # Set initial HTML content
         self.set_initial_content()
@@ -335,13 +344,13 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
                 </style>
             </head>
             <body>
-                <h1>Design</h1>
-                <div id="button">Start with <button id="activate-button" onclick="startButtonClicked()">Exploration</button> --->>></div>
+                <h1>Blog</h1>
+                <div id="button">Start with <button id="activate-button" onclick="startButtonClicked()">Exploration</button></div>
                 <div id="output"></div>
                 <script>
                     function startButtonClicked() {
                         console.log('Start button clicked');
-                        window.location.href = 'app:explore:0';  // Trigger the navigation event
+                        window.location.href = 'app:show_explore';  // Trigger the navigation event
                     }
                 </script>
             </body>
@@ -357,18 +366,26 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
         # Decode the string
         decoded_string = urllib.parse.unquote(encoded_string)
         return decoded_string
-
+    def on_navigation_request(self, event):
+        url = event.GetURL()
+        
+        # Check if the custom scheme 'app:' is used
+        if url.startswith("app:show_explore"):
+            event.Veto()  # Stop the browser from navigating away
+            pub.sendMessage("show_explore_tab")
+            # Add your Python logic here
+        else:
+            event.Skip()  # Allow normal navigation for other URLs
 
     def on_navigating(self, event):
         url = event.GetURL()
         print(f"Blog Navigating to: {url[:50]}")
         if url.startswith("app:"):
             _, type,payload = url.split(":")
-            if type == "explore":
-                pub.sendMessage("show_explore_tab")  
-            if type == "show_preview":
-                pub.sendMessage("show_preview_tab")                  
-                          
+            if type == "show_explore":
+                #title= self.decode(payload)
+                print(f"Sending to Explore")
+                pub.sendMessage("show_explore_tab")
             if type == "set_title":
                 title= self.decode(payload)
                 print(f"Setting title: {title}")
@@ -396,7 +413,7 @@ class Blog_WebViewPanel(wx.Panel, Blog_Controller):
 
 
 
-class BlogPanel(wx.Panel):
+class PreviewPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
         panel = self #wx.Panel(self)
@@ -404,10 +421,10 @@ class BlogPanel(wx.Panel):
         self.notebook = wx.Notebook(panel)
 
         # Create an instance of WebViewPanel
-        self.web_view_panel = Blog_WebViewPanel(self.notebook)
+        self.web_view_panel = Preview_WebViewPanel(self.notebook)
 
         # Add the WebViewPanel to the notebook with the label "Titles"
-        self.notebook.AddPage(self.web_view_panel, "Design")
+        self.notebook.AddPage(self.web_view_panel, "Blog")
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)

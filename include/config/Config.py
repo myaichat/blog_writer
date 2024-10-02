@@ -332,8 +332,8 @@ class Config():
         self.dump_file={}
         self.titles=[]
         self.mta=set()
-    def log(self, msg):
-        pub.sendMessage('applog', msg=msg)
+    def log(self, msg, type='info'):
+        pub.sendMessage('applog', msg=msg, type=type)
     def get_reel_descr(self):
         print   ('-----Getting reel descr:', self.user, self.page_id)
         return self.all_reel_descr[self.user].get(self.page_id,'No description')

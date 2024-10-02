@@ -4,6 +4,7 @@ from pubsub import pub
 from include.BlogPanel import BlogPanel
 from include.LogPanel import LogPanel 
 from include.DesignPanel import DesignPanel  
+from include.PreviewPanel import PreviewPanel
 import include.config.init_config as init_config 
 
 init_config.init(**{})
@@ -20,10 +21,12 @@ class WorkbookPanel(wx.Panel):
         self.notebook = wx.Notebook(panel)
 
         # Create an instance of WebViewPanel
-        self.web_view_panel = DesignPanel(self.notebook)
+        self.design_web_view_panel = DesignPanel(self.notebook)
+        self.preview_web_view_panel = PreviewPanel(self.notebook)
 
         # Add the WebViewPanel to the notebook with the label "Titles"
-        self.notebook.AddPage(self.web_view_panel, "Design")
+        self.notebook.AddPage(self.design_web_view_panel, "Explore")
+        self.notebook.AddPage(self.preview_web_view_panel, "Preview")
         if 0:
             chat_sizer = wx.BoxSizer(wx.HORIZONTAL)
             # Create a multiline TextCtrl (read-only)
@@ -41,6 +44,12 @@ class WorkbookPanel(wx.Panel):
 
 
         panel.SetSizer(main_sizer)
+        pub.subscribe(self.show_explore_tab, "show_explore_tab")
+        pub.subscribe(self.show_preview_tab, "show_preview_tab")
+    def show_explore_tab(self):
+        self.notebook.SetSelection(0)
+    def show_preview_tab(self):
+        self.notebook.SetSelection(1)   
     def on_get_titles(self, event):
         #self.text_ctrl.AppendText("Get Titles button clicked!\n")
         #self.web_view_panel.update_html_content()
@@ -54,7 +63,7 @@ class WorkbookPanel(wx.Panel):
 # Main Application with WebViewPanel, TextCtrl, and Chat Button
 class MyApp(wx.Frame):
     def __init__(self):
-        super().__init__(parent=None, title='Blog Designer')
+        super().__init__(parent=None, title='Blog Writer')
         self.config = wx.Config("MyAppSettings")
         panel = wx.Panel(self)
         

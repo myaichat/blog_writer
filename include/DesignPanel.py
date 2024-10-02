@@ -3,60 +3,15 @@ import wx
 from pubsub import pub
 from pprint import pprint as pp
 import include.config.init_config as init_config 
-from include.Controller.Topics import Topics_Controller
+
+from include.Controller.Sections import Sections_Controller
 apc = init_config.apc
 log=apc.log
 apc.prompt = "Deeplearning.AI"
-class Section():
-    def __init__(self):
-        self.sections = {}
-        #self.set_topics()
-
-    def set_sections(self, title_id, topic_id):
-        self.sections[int(title_id)]={}
-        if apc.mock:
-            
-            self.sections[int(title_id)][int(topic_id)] = ['''### Introduction: The Vision Behind DeepLearning.AI's Community Initiatives
-        At DeepLearning.AI, we envision a future where artificial intelligence 
-        flourishes through collaboration and active community engagement. 
-        Our mission is to cultivate a dynamic ecosystem that unites experts,
-        learners, and enthusiasts alike, empowering them to share knowledge and 
-        drive innovation together. By prioritizing partnerships and fostering 
-        inclusive initiatives, we strive to make AI accessible and impactful for 
-        everyone. In this blog, we invite you to explore the collaborative efforts 
-        that are nurturing a thriving AI community and inspiring the next generation 
-        of technological breakthroughs.''']  * 5
-            log(f"Mocked Sections set")
-        else:
-            raise Exception("Not implemented")
-        apc.sections=self.sections
+apc.expanded_title=None
+apc.expanded_topic=None
 
 
-    def get_sections(self, title_id, topic_id):
-       
-        return self.sections[title_id][topic_id] 
-    def reset(self):
-        self.sections={}    
-    
-    
-class Sections_Controller(Topics_Controller):  
-    def __init__(self):
-        Topics_Controller.__init__(self)
-        self.section = Section()
-        self.sections={}
-        pub.subscribe(self.set_sections, "set_sections")
-
-    def set_sections(self, title_id, topic_id):
-        print(f"set_sections: Title ID: {title_id} topic_id {topic_id}")
-        self.section.set_sections(title_id, topic_id)
-        
-        self.sections = self.section.get_sections(title_id, topic_id)
-        #pp(self.topics)
-        #print(f"topics: {self.topics}")
-        pub.sendMessage("display_html")
-        print(f"end of set_sections")
-        #self.display_html()
-        self.web_view.RunScriptAsync(f"window.location.href = '#topic_{title_id}_{topic_id}';")
 
          
       
@@ -134,15 +89,32 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 #start-button:hover {
                     background-color: #45a049;
                 }
+  #input-container {
+      width: 100%%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+  }
+
+  #user-input {
+      width: 100%%;
+      height: 200px;
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+      resize: vertical;
+      line-height: 1.5;
+  }                
             </style>
         </head>
         <body>
-            <h1>Welcome to the Blog Designer</h1>
+            <h1>Welcome to the Blog Writer</h1>
             <div id="input-container">
-                <textarea id="user-input" placeholder="Enter your prompt here">%s</textarea>
-                
+            <textarea id="user-input" placeholder="Enter your prompt here">%s</textarea>
             </div>
-            <div id="button"><button id="start-button" onclick="startButtonClicked()">Get Titles</button></div>
+            <div id="input-container"><button id="start-button" onclick="startButtonClicked()">Get Titles</button></div>
             <br><br><br>
             <div id="output"></div>
             <script>
@@ -192,20 +164,24 @@ class DesignPanel(wx.Panel,Sections_Controller):
 
             elif type == "show_topics":
                 tid=int(tid)
+                apc.expanded_title=tid
                 print(f"Title ID: {tid}")
                 pub.sendMessage("set_topics", title_id=tid)  
 
             elif type == "show_sections":
                 title_id,topic_id=tid.split("_")
+                title_id,topic_id= int(title_id), int(topic_id)
+                apc.expanded_title=title_id
+                apc.expanded_topic=topic_id
                 print(f"Title ID: {title_id}, Topic ID: {topic_id}")
                 pub.sendMessage("set_sections", title_id=int(title_id), topic_id=int(topic_id))  
 
             elif type == "show_start":
                 self.set_initial_content()  
 
-            elif type == "jump":
-                print(f"Jumping to: {tid}") 
-                self.web_view.RunScriptAsync("window.location.href = '#topic_3_1';")
+            elif type == "preview":
+                print(f"preview")
+                pub.sendMessage("show_preview_tab")
 
             event.Veto()  # Prevent actual navigation for our custom scheme
 
