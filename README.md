@@ -3,6 +3,7 @@
 
 Welcome to **Blog Writer**, an intuitive and AI-powered tool designed to streamline your blog creation process. This project leverages **wxPython** for the user interface and **OpenAI's GPT-4** model to generate blog titles, topics, and sections, making content creation both efficient and creative.
 
+![Art](https://github.com/myaichat/blog_writer/blob/main/docs/screenshot/Art.webp?raw=true)
 ## Features
 
 - **Title Generation**: Input a keyword or idea and generate blog titles with just a click.
@@ -42,6 +43,8 @@ Welcome to **Blog Writer**, an intuitive and AI-powered tool designed to streaml
 
 ## Example
 
-![Blog Writer UI](path_to_your_image.png)
+![Blog Writer UI](https://github.com/myaichat/blog_writer/blob/main/docs/screenshot/final_blog.png?raw=true)
 
 In the screenshot above, a blog post titled *"Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI"* has been generated with AI-powered suggestions. The user can preview and finalize the blog in real time.
+## References
+[Medium article](https://medium.com/p/0c2e7caec3d7)
