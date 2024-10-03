@@ -4,6 +4,7 @@ from pubsub import pub
 from pprint import pprint as pp
 from include.common import PropertyDefaultDict
 from pubsub import pub
+from datetime import datetime
 from datetime import date
 from os.path import join    
 
@@ -326,7 +327,7 @@ class Config():
     scopes = MutableDictAttribute()
     def __init__(self, **kwargs):
         self.cfg={}
- 
+        self.ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.home=None
         #self.page_tokens_fn='.page_tokens.json'
         self.dump_file={}

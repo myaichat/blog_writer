@@ -40,7 +40,7 @@ class DesignPanel(wx.Panel,Sections_Controller):
 
 
     def set_initial_content(self):
-        self.title.reset()
+        self.title.reset([])
         self.topic.reset()
         self.section.reset()
         initial_html = """

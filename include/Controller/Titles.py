@@ -1,26 +1,127 @@
 
 import wx
+import shutil
+import os,sys,time, json
+from os.path import join
 from pubsub import pub
+from datetime import date
+from os.path import isfile, isdir
 from pprint import pprint as pp 
 class notImplementedError(Exception):
     pass
 
 import include.config.init_config as init_config 
+class MutableList(list):
+    def __init__(self, parent_obj, descriptor):
+        super().__init__(getattr(parent_obj, descriptor.name))
+        self.parent_obj = parent_obj
+        self.descriptor = descriptor
+
+    def add_item(self, item):
+        if not isinstance(item, dict):
+            raise ValueError("Item must be a dictionary")
+        self.append(item)
+        self.descriptor.__set__(self.parent_obj, self)
+
+    def remove_item(self, index):
+        if 0 <= index < len(self):
+            del self[index]
+            self.descriptor.__set__(self.parent_obj, self)
+        else:
+            raise IndexError("Index out of range")
+
+    def update_item(self, index, new_item):
+        if not isinstance(new_item, dict):
+            raise ValueError("New item must be a dictionary")
+        if 0 <= index < len(self):
+            self[index] = new_item
+            self.descriptor.__set__(self.parent_obj, self)
+        else:
+            raise IndexError("Index out of range")
+class MutableListAttribute:
+    def __init__(self):
+        self.parent = None
+        self.name = None
+        self.real_name = None
+
+    def __set_name__(self, owner, name):
+        self.name = f"_{name}"
+        self.real_name = name
+
+    def __get__(self, obj, objtype=None):
+        if self.parent is None:
+            self.parent = obj
+        if not hasattr(obj, self.name):
+            setattr(obj, self.name, [])
+        return MutableList(obj, self)
+
+    def __set__(self, obj, value):
+        
+        if not isinstance(value, list):
+            raise ValueError("Value must be a list")
+        if not all(isinstance(item, dict) for item in value):
+            raise ValueError("All items in the list must be dictionaries")
+        if self.parent is None:
+            self.parent = obj
+        processed_value = self.process(value)
+        print('processed_value|__set__:',processed_value)
+        
+        setattr(obj, self.name, processed_value)
+        self.notify_change(processed_value)
+
+    def process(self, value):
+        #print(f'Processing: {self.real_name}', value)
+        if hasattr(self.parent, 'process'):
+            return self.parent.process(self.real_name, value)
+        return value
+
+    def notify_change(self, value):
+        pub.sendMessage(f'{self.real_name}_changed', value=value)
+
+
 
 apc = init_config.apc
 log=apc.log
 class Title():
+    titles = MutableListAttribute()
     def __init__(self):
-        self.set_titles()
+        #self.titles = []
+        self.cfg={}
+        self.mta=set()
+        self.dump_file={}
+        self.log_dir = log_dir=join('log', 'default')
+        self.latest_dir=latest_dir=join(log_dir, 'latest')
+        ts=apc.ts
+        
+        self.titles_fn=titles_fn=join(latest_dir, f'titles_{ts}.json')          
+        if not isdir(latest_dir):
+            os.makedirs(latest_dir)
+ 
+
+        else:
+            self.reset()
+        
+        if 1:
+            if not self.titles:
+                print('Setting titles--------------------------------')
+                self.set_titles()
+            else:
+                print('Titles already set')
+                print(self.titles)
+                #e()
+        
 
     def set_titles(self):
+        
         if apc.mock:
-            self.titles = [ "Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
+            for tt in ["Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
             "Empowering the Next Generation: DeepLearning.AI's Role in AI Education and Workforce Development",
             "Leading the Way: Groundbreaking Research and Innovations from DeepLearning.AI",
             "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI",
-            "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]
+            "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]:
+                self.titles.add_item(dict(title=tt))
             log('Mock Titles set')
+            self.titles[0]['title']='Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI'
         else:
             raise NotImplementedError
         apc.titles=self.titles
@@ -28,11 +129,88 @@ class Title():
     def get_titles(self):
         return self.titles
 
-    def __repr__(self):
-        return self.titles
-    def reset(self):
-        self.stitles=[]
+    def process(self, attr_name, value):
+        #print   ('-----Processing:', attr_name, value)
+        if attr_name in self.mta: # ['page_id', 'reel_id', 'user_token','followers_count','uploaded_cnt']:
+            #print(f"Parent processing: {attr_name} = {value}")
+            if value:
+                self.set_attr(attr_name, value)
+            return value
+    def reset(self, default=None):
+        log_dir, latest_dir = self.log_dir, self.latest_dir
+        assert isdir(latest_dir), latest_dir
+        assert isdir(log_dir), log_dir
+        files = os.listdir(latest_dir)
+        pp(files)
+        assert len(files) == 1, ('Should be only one latest file', files)
+        assert isfile(join(latest_dir, files[0])), ('Should be a file', files[0])
+        shutil.copy(join(latest_dir, files[0]), join(log_dir, files[0]))
+        os.rename(join(latest_dir, files[0]), self.titles_fn)
         
+        self.titles=self.get_attr('titles', [], self.titles_fn)
+        if default is not None:
+            self.titles=default
+            print('Resetting titles:', default)
+            #e()
+
+    
+    def get_attr(self, attr, default=None, dump_file='.config.json'): 
+        if attr not in self.dump_file:
+            self.dump_file[attr]=dump_file
+        config_fn=self.dump_file[attr]
+        self.mta.add(attr)
+        print('-------------------config_fn: ' , attr, config_fn)
+        if config_fn not in self.cfg:
+            self.cfg[config_fn]={}
+        cfg=self.cfg[config_fn]
+
+        if not cfg:
+            if isfile(config_fn):
+                try:
+                    print(f"Reading config file {config_fn}")
+                    with open(config_fn, 'r') as f:
+                        content = f.read().strip()
+                        #pp(content)
+                        if content:
+                            cfg_dump = json.loads(content)
+                            #pp(cfg_dump)
+                            self.cfg[config_fn]=cfg=cfg_dump
+                        else:
+                            print(f"Warning: {config_fn} is empty.")
+                except json.JSONDecodeError as e:
+                    print(f"Error reading config file {config_fn}: {e}")
+                    #print("Initializing with an empty PropertyDefaultDict.")
+                except Exception as e:
+                    print(f"Unexpected error reading config file {config_fn}: {e}")
+                    #print("Initializing with an empty PropertyDefaultDict.")
+            else:
+                print(f"Warning: connfig file {config_fn} does not exist.")
+            
+                
+        if cfg:
+            print(8888, cfg)
+            #print (attr.name)
+            value=cfg.get(attr, default)
+            print('Getting:', attr, type(value))   
+           
+            
+            return value
+        self.cfg[config_fn]=cfg
+        return default
+    def set_attr(self, attr, value):
+        #print('Setting:', attr, value, type(value))
+        assert attr in self.dump_file, f'set_attr: No dump file specified for attr "{attr}"'
+        dump_file = self.dump_file[attr]   
+        assert dump_file, f'set_attr: dump_file is not set  for attr "{attr}"'     
+        cfg=self.cfg[dump_file]
+        #pp(self.cfg)
+        assert cfg is not None, dump_file
+        cfg[attr]=value
+
+        assert dump_file, 'set_attr: No dump file specified'
+        print('Dumping ******************************:', attr, dump_file)    
+        with open(dump_file, 'w') as f:
+            json.dump(cfg, f, indent=2)        
     
 class Titles_Controller():  
     def __init__(self):
