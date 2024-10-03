@@ -325,14 +325,20 @@ class Config():
     upload_log = MutableDictAttribute()
     
     scopes = MutableDictAttribute()
+    app_config  = MutableDictAttribute()
     def __init__(self, **kwargs):
         self.cfg={}
         self.ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.home=None
         #self.page_tokens_fn='.page_tokens.json'
         self.dump_file={}
-        self.titles=[]
+        self.titles={}
         self.mta=set()
+        self.app_config=self.get_attr('app_config', {}, join('config', 'app_config.json')) 
+        self.app_config['default_title']=default_title=self.app_config.get('default_title', 'default')
+
+        self.default_title=default_title
+        
     def log(self, msg, type='info'):
         pub.sendMessage('applog', msg=msg, type=type)
     def get_reel_descr(self):

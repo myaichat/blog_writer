@@ -1,46 +1,50 @@
+
 import wx
+import os, sys, json, shutil
+from  os.path import isfile, isdir, join
 from pubsub import pub
 from pprint import pprint as pp 
-import include.config.init_config as init_config 
 
+import include.config.init_config as init_config 
 apc = init_config.apc
 log=apc.log
-apc.used_section=None
-apc.used_section    =None
-class Blog():
+class notImplementedError(Exception):
+    pass
+
+class Design():
     def __init__(self):
-        self.set_blog()
+        self.set_design()
 
-    def set_blog(self):
-        self.blog = {'title': {'name':'','topics':[]} }
+    def set_design(self):
+        self.design = {'title': {'name':'','topics':[]} }
 
-    def get_blog(self):
-        return self.blog
+    def get_design(self):
+        return self.design
 
     def reset(self):
-        self.set_blog()
-class Blog_Controller():  
+        self.set_design()
+class Design_Controller():  
     def __init__(self):
-        self.blog = Blog()
+        self.design = Design()
         self.title_html=''
         self.topic_html=''
         pub.subscribe(self.use_title, "use_title")
         pub.subscribe(self.use_topic, "use_topic")
         pub.subscribe(self.use_section, "use_section")
-        pub.subscribe(self.reset_blog, "reset_blog")
+        pub.subscribe(self.reset_design, "reset_design")
     
-    def reset_blog(self, tid):
-        print(f"Resetting blog: {tid}")
-        self.blog.reset()
+    def reset_design(self, tid):
+        print(f"Resetting design: {tid}")
+        self.design.reset()
         #self.set_titles()
     def use_title(self, tid):
         print(f"Using title: {tid}")
-        blog = self.blog.get_blog()
-        title= apc.titles[tid]
-        blog['title']['name'] = title
+        design = self.design.get_design()
+        title= apc.titles[tid]['title']
+        design['title']['name'] = title
         
         title_html= "<table>"
-        #for sname, section in blog.items(): #<button onclick="testButtonClicked({sname})">del</button>
+        #for sname, section in design.items(): #<button onclick="testButtonClicked({sname})">del</button>
         title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>
         '''
         title_html += "</table>"
@@ -53,9 +57,9 @@ class Blog_Controller():
         topic= apc.topics[tid][toid]
         #print(777777, topic)
         
-        blog = self.blog.get_blog()
+        design = self.design.get_design()
         active_tid=None
-        for ttid, top in enumerate(blog['title']['topics']):
+        for ttid, top in enumerate(design['title']['topics']):
             if top['title']['tid'] == tid and top['toid']==toid:
                 log('Topic is already used')
                 return            
@@ -67,13 +71,13 @@ class Blog_Controller():
             for sec in top['sections']:
                 sec['active']=False
         if active_tid is not None:
-                blog['title']['topics'].insert(active_tid+1, {'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
+                design['title']['topics'].insert(active_tid+1, {'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
                 apc.used_topic=active_tid+1
         else:
-            blog['title']['topics'].append({'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
-            apc.used_topic=len(blog['title']['topics'])-1
+            design['title']['topics'].append({'toid':toid,'name':topic,'active':True, 'sections':[],'title': {'tid':tid,'name':apc.titles[tid]}})
+            apc.used_topic=len(design['title']['topics'])-1
         #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$', apc.used_topic)
-        topic_html= self.get_topic_html(blog)
+        topic_html= self.get_topic_html(design)
 
         
 
@@ -81,9 +85,9 @@ class Blog_Controller():
         self.topic_html=topic_html
         self.show_html()
         self.web_view.RunScriptAsync(f"window.location.href = '#topic_{tid}_{toid}';")
-    def get_topic_html(self, blog):
+    def get_topic_html(self, design):
         topic_html= "<table>"
-        for ttoid, top in enumerate(blog['title']['topics']): #<button onclick="testButtonClicked({sname})">del</button>
+        for ttoid, top in enumerate(design['title']['topics']): #<button onclick="testButtonClicked({sname})">del</button>
             top_id=top['toid'] 
             title_id=top['title']['tid'] 
             name=top['name']
@@ -134,11 +138,11 @@ class Blog_Controller():
             topic= apc.topics[tid][toid]
             #print(777777, topic)
             section= apc.sections[tid][toid][sid]
-            blog = self.blog.get_blog()
-            #get active blog topic
-            if not blog['title']['topics']:
+            design = self.design.get_design()
+            #get active design topic
+            if not design['title']['topics']:
                 log('Cannot add section without topic','error')
-            for top in blog['title']['topics']:
+            for top in design['title']['topics']:
                 if top['active']:
                     #deactivate all sections
                     active_sid=None
@@ -153,13 +157,13 @@ class Blog_Controller():
                     else:
                         top['sections'].append({'sid':sid,'name':section, 'active':True, 'title': {'tid':tid,'name':apc.titles[tid]}, 'topic': {'toid':toid,'name':topic}})  
                         apc.used_section=len(top['sections'])-1
-            #blog['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
+            #design['title']['topics'].append({'name':topic,'sections':[],'title': apc.titles[tid]})
             
-            topic_html= self.get_topic_html(blog)
+            topic_html= self.get_topic_html(design)
 
             #print(999, topic_html)
             self.topic_html=topic_html
-            pp(blog['title']['topics'])
+            pp(design['title']['topics'])
         self.show_html()
 
     def show_html(self):
@@ -219,7 +223,7 @@ class Blog_Controller():
             <pre>
                 <div id="header-container">
                 <h1>Design</h1><a href="app:show_preview:0">Preview</a>
-                <a href="app:reset_blog:0">Reset</a>
+                <a href="app:reset_design:0">Reset</a>
             </div>
             %s
             %s
@@ -250,8 +254,8 @@ class Blog_Controller():
 
     def activate_topic(self, tid, toid):
         print(f"activate_topic: {tid, toid}")
-        blog = self.blog.get_blog()
-        for ttoid, top in enumerate(blog['title']['topics']):
+        design = self.design.get_design()
+        for ttoid, top in enumerate(design['title']['topics']):
             top['active']=False
             #deactivate sections too
             for sec in top['sections']:
@@ -264,17 +268,17 @@ class Blog_Controller():
                     top['sections'][-1]['active']=True
                     apc.used_section=len(top['sections'])-1
         
-        pp(blog)
+        pp(design)
         
-        topic_html= self.get_topic_html(blog)
+        topic_html= self.get_topic_html(design)
 
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()
     def activate_section(self, tid, toid, sid):
         print(f"activate_section: {tid, toid}")
-        blog = self.blog.get_blog()
-        for top in blog['title']['topics']:
+        design = self.design.get_design()
+        for top in design['title']['topics']:
             top['active']=False
             if top['title']['tid'] == tid and top['toid']==toid:
                 top['active']=True
@@ -283,133 +287,10 @@ class Blog_Controller():
                     if sec['sid'] == sid:
                         sec['active']=True
         
-        pp(blog)
+        pp(design)
         
-        topic_html= self.get_topic_html(blog)
+        topic_html= self.get_topic_html(design)
 
         #print(999, topic_html)
         self.topic_html=topic_html
         self.show_html()        
-class Blog_WebViewPanel(wx.Panel, Blog_Controller):
-    def __init__(self, parent,):
-        super().__init__(parent)
-        Blog_Controller.__init__(self)
-        
-        # Create the WebView control
-        self.web_view = wx.html2.WebView.New(self)
-        
-        # Attach custom scheme handler
-        #self.attach_custom_scheme_handler()
-
-        # Bind navigation and error events
-        self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATING, self.on_navigating)
-        self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
-
-        # Set initial HTML content
-        self.set_initial_content()
-
-        # Create sizer to organize the WebView
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.web_view, 1, wx.EXPAND,0)
-        self.SetSizer(sizer)
-
-
-        
-
-
-    def set_initial_content(self):
-        initial_html = """
-        <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    #activate-button { 
-                        padding: 2px 5px;
-                        font-size: 16px;
-                        cursor: pointer;
-                        background-color: #90EE90;
-                        color: black;
-                        border: none;
-                        border-radius: 2px;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Design</h1>
-                <div id="button">Start with <button id="activate-button" onclick="startButtonClicked()">Exploration</button> --->>></div>
-                <div id="output"></div>
-                <script>
-                    function startButtonClicked() {
-                        console.log('Start button clicked');
-                        window.location.href = 'app:explore:0';  // Trigger the navigation event
-                    }
-                </script>
-            </body>
-        </html>
-        """  
-        self.web_view.SetPage(initial_html, "")
-    def decode(self, encoded_string):
-        import urllib.parse
-
-        # The encoded URL string
-        #encoded_string = "Transforming%20Industries%3A%20How%20DeepLearning.AI%20is%20Revolutionizing%20Business%20with%20AI"
-
-        # Decode the string
-        decoded_string = urllib.parse.unquote(encoded_string)
-        return decoded_string
-
-
-    def on_navigating(self, event):
-        url = event.GetURL()
-        print(f"Blog Navigating to: {url[:50]}")
-        if url.startswith("app:"):
-            _, type,payload = url.split(":")
-            if type == "explore":
-                pub.sendMessage("show_explore_tab")  
-            if type == "show_preview":
-                pub.sendMessage("show_preview_tab")                  
-                          
-            if type == "set_title":
-                title= self.decode(payload)
-                print(f"Setting title: {title}")
-            if type == "reset_blog":
-                title= self.decode(payload)
-                print(f"Resetting blog: {title}") 
-                self.blog.reset() 
-                self.set_initial_content()  
-            if type == "activate_topic":
-                tid, toid = payload.split("_")
-                tid, toid = int(tid), int(toid)
-                #title= self.decode(payload)
-                print(f"activate_topic: {tid, toid}")
-                self.activate_topic(tid, toid)   
-            if type == "activate_section":
-                tid, toid, sid = payload.split("_")
-                tid, toid, sid = int(tid), int(toid), int(sid)
-                #title= self.decode(payload)
-                print(f"activate_section: {tid, toid, sid}")
-                self.activate_section(tid, toid, sid)             
-            event.Veto()  # Prevent actual navigation for our custom scheme
-
-    def on_webview_error(self, event):
-        print(f"WebView error: {event.GetString()}")
-
-
-
-class BlogPanel(wx.Panel):
-    def __init__(self, parent):
-        super().__init__(parent)
-        panel = self #wx.Panel(self)
-        # Create a notebook control
-        self.notebook = wx.Notebook(panel)
-
-        # Create an instance of WebViewPanel
-        self.web_view_panel = Blog_WebViewPanel(self.notebook)
-
-        # Add the WebViewPanel to the notebook with the label "Titles"
-        self.notebook.AddPage(self.web_view_panel, "Design")
-
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)
-        
-        panel.SetSizer(main_sizer)

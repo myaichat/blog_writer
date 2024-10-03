@@ -1,9 +1,9 @@
 import wx, sys
 import wx.html2
 from pubsub import pub
-from include.BlogPanel import BlogPanel
+from include.DesignPanel import DesignPanel
 from include.LogPanel import LogPanel 
-from include.DesignPanel import DesignPanel  
+from include.ExplorePanel import ExplorePanel  
 from include.PreviewPanel import PreviewPanel
 import include.config.init_config as init_config 
 
@@ -21,7 +21,7 @@ class WorkbookPanel(wx.Panel):
         self.notebook = wx.Notebook(panel)
 
         # Create an instance of WebViewPanel
-        self.design_web_view_panel = DesignPanel(self.notebook)
+        self.design_web_view_panel = ExplorePanel(self.notebook)
         self.preview_web_view_panel = PreviewPanel(self.notebook)
 
         # Add the WebViewPanel to the notebook with the label "Titles"
@@ -67,7 +67,7 @@ class MyApp(wx.Frame):
         self.config = wx.Config("MyAppSettings")
         panel = wx.Panel(self)
         
-        blog_panel = BlogPanel(panel)
+        blog_panel = DesignPanel(panel)
         blog_panel.SetMinSize((500, -1))
         #self.notebook.AddPage(blog_panel, "Blog")
         design_panel = WorkbookPanel(panel)
@@ -85,6 +85,7 @@ class MyApp(wx.Frame):
         # Bind the close event to save the layout when the window is closed
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Show()
+        print('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
     def restore_layout(self):
         """Restore the layout and UI component states using wx.Config."""
         size = self.config.Read("window_size", "800,600").split(',')

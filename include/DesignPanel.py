@@ -1,28 +1,21 @@
-
 import wx
 from pubsub import pub
-from pprint import pprint as pp
+from pprint import pprint as pp 
+from include.Controller.Design import Design_Controller
 import include.config.init_config as init_config 
 
-from include.Controller.Sections import Sections_Controller
 apc = init_config.apc
 log=apc.log
-apc.prompt = "Deeplearning.AI"
-apc.expanded_title=None
-apc.expanded_topic=None
-
-
-
-         
-      
-
-class DesignPanel(wx.Panel,Sections_Controller):
-    def __init__(self, parent):
+apc.used_section=None
+apc.used_section    =None
+class Design_WebViewPanel(wx.Panel, Design_Controller):
+    def __init__(self, parent,):
         super().__init__(parent)
-        Sections_Controller.__init__(self)
+        Design_Controller.__init__(self)
+        
         # Create the WebView control
         self.web_view = wx.html2.WebView.New(self)
-
+        
         # Attach custom scheme handler
         #self.attach_custom_scheme_handler()
 
@@ -31,165 +24,110 @@ class DesignPanel(wx.Panel,Sections_Controller):
         self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
 
         # Set initial HTML content
-        if not self.title.titles:
-            self.set_initial_content()
-        else:
-            self.titles=self.title.titles
-            self.display_html()   
+        self.set_initial_content()
+
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)
         self.SetSizer(sizer)
 
 
-    def set_initial_content(self, hard_reset=False):
-        self.title.reset(hard_reset)
-        self.titles=self.title.titles   
-        #self.topic.reset()
-        #self.section.reset()
+        
+
+
+    def set_initial_content(self):
         initial_html = """
         <html>
-        <head>
-            <style>
-     .left-align {
-                    text-align: left;
-                }
-     
-               body { font-family: Arial, sans-serif; }
-                #header-container {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 20px;
-                }
-                #header-container h1 {
-                    margin: 0;
-                }
-                #url-input {
-                    width: 300px;
-                    padding: 5px;
-                }
-                #input-container { 
-                    margin: 20px 0;
-                    display: flex;
-                    align-items: flex-start;
-                }
-                #user-input {
-                    width: 300px;
-                    height: 100px;
-                    padding: 5px;
-                    resize: vertical;
-                    margin-right: 10px;
-                }
-                #start-button { 
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    cursor: pointer;
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                }
-                #start-button:hover {
-                    background-color: #45a049;
-                }
-  #input-container {
-      width: 100%%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-  }
-
-  #user-input {
-      width: 100%%;
-      height: 200px;
-      padding: 10px;
-      font-size: 16px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
-      resize: vertical;
-      line-height: 1.5;
-  }                
-            </style>
-        </head>
-        <body>
-            <h1>Welcome to the Blog Writer</h1>
-            <div id="input-container">
-            <textarea id="user-input" placeholder="Enter your prompt here">%s</textarea>
-            </div>
-            <div id="input-container"><button id="start-button" onclick="startButtonClicked()">Get Titles</button></div>
-            <br><br><br>
-            <div id="output"></div>
-            <script>
-                function startButtonClicked() {
-                    var userInput = document.getElementById('user-input').value;
-                    document.getElementById('output').innerHTML = 'You entered: ' + userInput;
-                    window.location.href = 'app:get_titles:' + encodeURIComponent(userInput);
-                }
-            </script>
-        </body>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    #activate-button { 
+                        padding: 2px 5px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        background-color: #90EE90;
+                        color: black;
+                        border: none;
+                        border-radius: 2px;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Design</h1>
+                <div id="button">Start with <button id="activate-button" onclick="startButtonClicked()">Exploration</button> --->>></div>
+                <div id="output"></div>
+                <script>
+                    function startButtonClicked() {
+                        console.log('Start button clicked');
+                        window.location.href = 'app:explore:0';  // Trigger the navigation event
+                    }
+                </script>
+            </body>
         </html>
-        """ % apc.prompt
+        """  
         self.web_view.SetPage(initial_html, "")
+    def decode(self, encoded_string):
+        import urllib.parse
 
+        # The encoded URL string
+        #encoded_string = "Transforming%20Industries%3A%20How%20DeepLearning.AI%20is%20Revolutionizing%20Business%20with%20AI"
+
+        # Decode the string
+        decoded_string = urllib.parse.unquote(encoded_string)
+        return decoded_string
 
 
     def on_navigating(self, event):
         url = event.GetURL()
-        print(f"BLOG: Navigating to: {url[:50]}")
+        print(f"Blog Navigating to: {url[:50]}")
         if url.startswith("app:"):
-            _, type,tid = url.split(":")
-            
-            if type == "use_title":
-                tid=int(tid)
-                print(f"Title ID: {tid}")
-                assert len(apc.titles)>tid
-                log(f"Using title: {apc.titles[tid]}")
-                pub.sendMessage("use_title", tid=tid)
-            if type == "use_topic":
-                title_id,topic_id=tid.split("_")
-                title_id,topic_id= int(title_id), int(topic_id)
-                print(f"Title ID: {title_id}")
-                assert len(apc.titles)>int(title_id)
-                log(f"Using topic: {apc.topics[title_id][topic_id]}")
-                pub.sendMessage("use_topic", tid=int(title_id), toid=int(topic_id))
-            if type == "use_section":
-                title_id,topic_id, section_id=tid.split("_")
-                title_id,topic_id, section_id= int(title_id), int(topic_id), int(section_id)
-                print(f"Title ID: {title_id}")
-                assert len(apc.titles)>int(title_id)
-                log(f"Using section: {apc.sections[title_id][topic_id][section_id]}")
-                pub.sendMessage("use_section", tid=int(title_id), toid=int(topic_id), sid=int(section_id))
-            elif type == "get_titles":
-                user_input=tid
-                log("design start")
-                pub.sendMessage("set_titles", user_input=user_input)
-
-            elif type == "show_topics":
-                tid=int(tid)
-                apc.expanded_title=tid
-                print(f"Title ID: {tid}")
-                pub.sendMessage("set_topics", title_id=tid)  
-
-            elif type == "show_sections":
-                title_id,topic_id=tid.split("_")
-                title_id,topic_id= int(title_id), int(topic_id)
-                apc.expanded_title=title_id
-                apc.expanded_topic=topic_id
-                print(f"Title ID: {title_id}, Topic ID: {topic_id}")
-                pub.sendMessage("set_sections", title_id=int(title_id), topic_id=int(topic_id))  
-
-            elif type == "reset_titles":
-                self.set_initial_content(hard_reset=True)  
-
-            elif type == "preview":
-                print(f"preview")
-                pub.sendMessage("show_preview_tab")
-
+            _, type,payload = url.split(":")
+            if type == "explore":
+                pub.sendMessage("show_explore_tab")  
+            if type == "show_preview":
+                pub.sendMessage("show_preview_tab")                  
+                          
+            if type == "set_title":
+                title= self.decode(payload)
+                print(f"Setting title: {title}")
+            if type == "reset_design":
+                title= self.decode(payload)
+                print(f"Resetting design: {title}") 
+                self.design.reset(hard=True) 
+                self.set_initial_content()  
+            if type == "activate_topic":
+                tid, toid = payload.split("_")
+                tid, toid = int(tid), int(toid)
+                #title= self.decode(payload)
+                print(f"activate_topic: {tid, toid}")
+                self.activate_topic(tid, toid)   
+            if type == "activate_section":
+                tid, toid, sid = payload.split("_")
+                tid, toid, sid = int(tid), int(toid), int(sid)
+                #title= self.decode(payload)
+                print(f"activate_section: {tid, toid, sid}")
+                self.activate_section(tid, toid, sid)             
             event.Veto()  # Prevent actual navigation for our custom scheme
 
     def on_webview_error(self, event):
         print(f"WebView error: {event.GetString()}")
 
 
+
+class DesignPanel(wx.Panel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        panel = self #wx.Panel(self)
+        # Create a notebook control
+        self.notebook = wx.Notebook(panel)
+
+        # Create an instance of WebViewPanel
+        self.web_view_panel = Design_WebViewPanel(self.notebook)
+
+        # Add the WebViewPanel to the notebook with the label "Titles"
+        self.notebook.AddPage(self.web_view_panel, "Design")
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, 5)
+        
+        panel.SetSizer(main_sizer)

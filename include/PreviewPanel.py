@@ -88,7 +88,7 @@ class Preview_Controller():
             title_id=top['title']['tid'] 
             name=top['name']
             assert name
-            title=top['title']['name']
+            title=top['title']['name']['title']
             active=top['active']    
             active_btn = '<span style="color: #FF6666;">Active</span>'
             if not active:

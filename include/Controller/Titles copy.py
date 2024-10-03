@@ -1,6 +1,6 @@
 
 import wx
-import shutil, traceback
+import shutil
 import os,sys,time, json
 from os.path import join
 from pubsub import pub
@@ -10,59 +10,39 @@ from pprint import pprint as pp
 class notImplementedError(Exception):
     pass
 
-
 import include.config.init_config as init_config 
+class MutableList(list):
+    def __init__(self, parent_obj, descriptor):
+        super().__init__(getattr(parent_obj, descriptor.name))
+        self.parent_obj = parent_obj
+        self.descriptor = descriptor
 
+    def add_item(self, item):
+        if not isinstance(item, dict):
+            raise ValueError("Item must be a dictionary")
+        self.append(item)
+        self.descriptor.__set__(self.parent_obj, self)
 
-def format_stacktrace():
-    parts = ["Traceback (most recent call last):\n"]
-    parts.extend(traceback.format_stack(limit=25))
-    parts.extend(traceback.format_exception(*sys.exc_info())[1:])
-    return "".join(parts)
-class NotifyingDict(dict):
-    def __init__(self, *args, parent=None, key=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.parent = parent
-        self.key = key
-        self._processing = False
-        for k, v in self.items():
-            if isinstance(v, dict):
-                self[k] = NotifyingDict(v, parent=self, key=k)
-
-    def __setitem__(self, key, value):
-        if isinstance(value, dict) and not isinstance(value, NotifyingDict):
-            value = NotifyingDict(value, parent=self, key=key)
-        super().__setitem__(key, value)
-        self.propagate_change()
-        
-
-    def __getattr__(self, name):
-        try:
-            
-            return self[name]
-        except KeyError:
-            raise AttributeError(f"'NotifyingDict' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if name in ['parent', 'key', '_processing']:
-            super().__setattr__(name, value)
+    def remove_item(self, index):
+        if 0 <= index < len(self):
+            del self[index]
+            self.descriptor.__set__(self.parent_obj, self)
         else:
-            self[name] = value
-        
+            raise IndexError("Index out of range")
 
-    def propagate_change(self):
-        if self.parent and not self._processing:
-            if isinstance(self.parent, NotifyingDict):
-                self.parent.propagate_change()
-            elif isinstance(self.parent, MutableDictAttribute):
-                self.parent.child_changed()
-
-class MutableDictAttribute:
+    def update_item(self, index, new_item):
+        if not isinstance(new_item, dict):
+            raise ValueError("New item must be a dictionary")
+        if 0 <= index < len(self):
+            self[index] = new_item
+            self.descriptor.__set__(self.parent_obj, self)
+        else:
+            raise IndexError("Index out of range")
+class MutableListAttribute:
     def __init__(self):
         self.parent = None
         self.name = None
         self.real_name = None
-
 
     def __set_name__(self, owner, name):
         self.name = f"_{name}"
@@ -71,39 +51,39 @@ class MutableDictAttribute:
     def __get__(self, obj, objtype=None):
         if self.parent is None:
             self.parent = obj
-        
-        return getattr(obj, self.name, None)
+        if not hasattr(obj, self.name):
+            setattr(obj, self.name, [])
+        return MutableList(obj, self)
 
     def __set__(self, obj, value):
+        
+        if not isinstance(value, list):
+            raise ValueError("Value must be a list")
+        if not all(isinstance(item, dict) for item in value):
+            raise ValueError("All items in the list must be dictionaries")
         if self.parent is None:
             self.parent = obj
         processed_value = self.process(value)
-        if isinstance(processed_value, dict):
-            processed_value = NotifyingDict(processed_value, parent=self, key=self.real_name)
-        setattr(obj, self.name, processed_value)
+        print('processed_value|__set__:',processed_value)
         
+        setattr(obj, self.name, processed_value)
+        self.notify_change(processed_value)
 
     def process(self, value):
-        print('222 Processing:', self.real_name, value)
+        #print(f'Processing: {self.real_name}', value)
         if hasattr(self.parent, 'process'):
             return self.parent.process(self.real_name, value)
-         
         return value
 
-    def child_changed(self):
-        if hasattr(self.parent, 'process'):
-            current_value = getattr(self.parent, self.name, None)
-            if current_value is not None:
-                current_value._processing = True
-                processed = self.parent.process(self.real_name, current_value)
-                current_value._processing = False
-                setattr(self.parent, self.name, processed)
+    def notify_change(self, value):
+        pub.sendMessage(f'{self.real_name}_changed', value=value)
+
 
 
 apc = init_config.apc
 log=apc.log
 class Title():
-    titles = NotifyingDict()
+    titles = MutableListAttribute()
     def __init__(self):
         #self.titles = []
         self.init()
@@ -117,7 +97,7 @@ class Title():
             os.makedirs(latest_dir)
  
 
-        if 0:
+        else:
             self.reset()
         
         if 0:
@@ -133,16 +113,15 @@ class Title():
         self.mta=set()
         self.dump_file={}
 
-    def set_titles(self, title_set_name='default'):
+    def set_titles(self):
         
-        self.titles[title_set_name]  ={}
         if apc.mock:
-            for tid, tt in enumerate(["Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
+            for tt in ["Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
             "Empowering the Next Generation: DeepLearning.AI's Role in AI Education and Workforce Development",
             "Leading the Way: Groundbreaking Research and Innovations from DeepLearning.AI",
             "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI",
-            "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]):
-                self.titles[title_set_name][str(tid)]=dict(title=tt)
+            "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]:
+                self.titles.add_item(dict(title=tt))
             log('Mock Titles set')
             #self.titles[0]['title']='Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI'
         else:
@@ -177,13 +156,12 @@ class Title():
                 self.titles_fn=join(latest_dir, f'titles_{apc.ts}_reset.json')
                 self.init()
                        
-        self.titles=self.get_attr('titles', {}, self.titles_fn)
+        self.titles=self.get_attr('titles', [], self.titles_fn)
         apc.titles=self.titles
 
 
     
     def get_attr(self, attr, default=None, dump_file='.config.json'): 
-        
         if attr not in self.dump_file:
             self.dump_file[attr]=dump_file
         config_fn=self.dump_file[attr]
@@ -225,11 +203,6 @@ class Title():
             
             return value
         self.cfg[config_fn]=cfg
-        print('returning ',attr,  default)
-        try:
-            e()
-        except:
-            print(format_stacktrace())
         return default
     def set_attr(self, attr, value):
         #print('Setting:', attr, value, type(value))
@@ -243,17 +216,15 @@ class Title():
 
         assert dump_file, 'set_attr: No dump file specified'
         print('Dumping ******************************:', attr, dump_file)    
-        e()
         with open(dump_file, 'w') as f:
             json.dump(cfg, f, indent=2)        
     
 class Titles_Controller():  
     def __init__(self):
         self.title = Title()
-        #self.titles=self.title.get_titles()
+        self.titles=[]
         pub.subscribe(self.set_titles, "set_titles")
         pub.subscribe(self.display_html, "display_html")
-        print('Titles_Controller: __init__')
 
     def set_titles(self, user_input):
         self.title.set_titles()
@@ -265,10 +236,7 @@ class Titles_Controller():
         #print("Titles_Controller: display_html")
         titles_html= """<button id="titles-button"  onclick="showTitles({tid},{toid})" style="position: absolute; left: 0;">Titles</button>
 <table>"""
-
-        pp(self.titles)
-        apc.current_title='default'
-        for tid, titled in self.titles[apc.current_title].items():
+        for tid, titled in enumerate(self.titles):
             #tid=str(tid)
             title=titled['title']
             print   (f"display_html: Title: {tid}. {title}")
@@ -314,7 +282,7 @@ class Titles_Controller():
             else:
                 #pp(self.topic.topics)
                 #e()
-                topics_html = str(self.topic.topics.keys()) + f'No topics for {tid} +' + str(tid in self.topic.topics) + str(self.title.titles)
+                topics_html = str(self.topic.topics.keys()) + f'No topics for {tid} +' + str(tid in self.topic.topics)
             title_border='black_border'
             if apc.expanded_title == tid:
                 title_border='fancy-border'
