@@ -31,18 +31,22 @@ class DesignPanel(wx.Panel,Sections_Controller):
         self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
 
         # Set initial HTML content
-        self.set_initial_content()
-
+        if not self.title.titles:
+            self.set_initial_content()
+        else:
+            self.titles=self.title.titles
+            self.display_html()   
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)
         self.SetSizer(sizer)
 
 
-    def set_initial_content(self):
-        self.title.reset([])
-        self.topic.reset()
-        self.section.reset()
+    def set_initial_content(self, hard_reset=False):
+        self.title.reset(hard_reset)
+        self.titles=self.title.titles   
+        #self.topic.reset()
+        #self.section.reset()
         initial_html = """
         <html>
         <head>
@@ -121,7 +125,7 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 function startButtonClicked() {
                     var userInput = document.getElementById('user-input').value;
                     document.getElementById('output').innerHTML = 'You entered: ' + userInput;
-                    window.location.href = 'app:start:' + encodeURIComponent(userInput);
+                    window.location.href = 'app:get_titles:' + encodeURIComponent(userInput);
                 }
             </script>
         </body>
@@ -157,7 +161,7 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 assert len(apc.titles)>int(title_id)
                 log(f"Using section: {apc.sections[title_id][topic_id][section_id]}")
                 pub.sendMessage("use_section", tid=int(title_id), toid=int(topic_id), sid=int(section_id))
-            elif type == "start":
+            elif type == "get_titles":
                 user_input=tid
                 log("design start")
                 pub.sendMessage("set_titles", user_input=user_input)
@@ -176,8 +180,8 @@ class DesignPanel(wx.Panel,Sections_Controller):
                 print(f"Title ID: {title_id}, Topic ID: {topic_id}")
                 pub.sendMessage("set_sections", title_id=int(title_id), topic_id=int(topic_id))  
 
-            elif type == "show_start":
-                self.set_initial_content()  
+            elif type == "reset_titles":
+                self.set_initial_content(hard_reset=True)  
 
             elif type == "preview":
                 print(f"preview")

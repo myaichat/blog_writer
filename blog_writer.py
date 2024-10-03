@@ -1,4 +1,4 @@
-import wx
+import wx, sys
 import wx.html2
 from pubsub import pub
 from include.BlogPanel import BlogPanel
@@ -112,6 +112,10 @@ class MyApp(wx.Frame):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        apc.blog_name = sys.argv[1]  # Use the first command-line argument
+    else:
+        apc.blog_name = "default"  # Default value if no argument is provided    
     app = wx.App()
     frame = MyApp()
     app.MainLoop()

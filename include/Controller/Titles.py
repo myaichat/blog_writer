@@ -86,10 +86,9 @@ class Title():
     titles = MutableListAttribute()
     def __init__(self):
         #self.titles = []
-        self.cfg={}
-        self.mta=set()
-        self.dump_file={}
-        self.log_dir = log_dir=join('log', 'default')
+        self.init()
+        assert apc.blog_name, 'Blog name not set'
+        self.log_dir = log_dir=join('log', apc.blog_name)
         self.latest_dir=latest_dir=join(log_dir, 'latest')
         ts=apc.ts
         
@@ -101,7 +100,7 @@ class Title():
         else:
             self.reset()
         
-        if 1:
+        if 0:
             if not self.titles:
                 print('Setting titles--------------------------------')
                 self.set_titles()
@@ -109,7 +108,10 @@ class Title():
                 print('Titles already set')
                 print(self.titles)
                 #e()
-        
+    def init(self):
+        self.cfg={}
+        self.mta=set()
+        self.dump_file={}
 
     def set_titles(self):
         
@@ -136,22 +138,26 @@ class Title():
             if value:
                 self.set_attr(attr_name, value)
             return value
-    def reset(self, default=None):
+    def reset(self, hard=False):
         log_dir, latest_dir = self.log_dir, self.latest_dir
         assert isdir(latest_dir), latest_dir
         assert isdir(log_dir), log_dir
         files = os.listdir(latest_dir)
         pp(files)
-        assert len(files) == 1, ('Should be only one latest file', files)
-        assert isfile(join(latest_dir, files[0])), ('Should be a file', files[0])
-        shutil.copy(join(latest_dir, files[0]), join(log_dir, files[0]))
-        os.rename(join(latest_dir, files[0]), self.titles_fn)
-        
+        assert len(files) <= 1, ('Should be only one latest file', files)
+        if files:
+            assert isfile(join(latest_dir, files[0])), ('Should be a file', files[0])
+            shutil.copy(join(latest_dir, files[0]), join(log_dir, files[0]))
+            os.rename(join(latest_dir, files[0]), self.titles_fn)
+            if hard:
+                os.remove(self.titles_fn)
+                assert not isfile(self.titles_fn), self.titles_fn
+                self.titles_fn=join(latest_dir, f'titles_{apc.ts}_reset.json')
+                self.init()
+                       
         self.titles=self.get_attr('titles', [], self.titles_fn)
-        if default is not None:
-            self.titles=default
-            print('Resetting titles:', default)
-            #e()
+        apc.titles=self.titles
+
 
     
     def get_attr(self, attr, default=None, dump_file='.config.json'): 
@@ -220,6 +226,7 @@ class Titles_Controller():
         pub.subscribe(self.display_html, "display_html")
 
     def set_titles(self, user_input):
+        self.title.set_titles()
         self.titles = self.title.get_titles()
         apc.prompt=user_input
         #print(f"Titles: {self.titles}")
@@ -465,10 +472,10 @@ class Titles_Controller():
                 }    
                 function resetButtonClicked() {
                     console.log('reset button clicked');
-                    window.location.href = 'app:show_start:0';
+                    window.location.href = 'app:reset_titles:0';
                 }  
                 function previewButtonClicked() {
-                    console.log('reset button clicked');
+                    console.log('preview button clicked');
                     window.location.href = 'app:preview:0';
                 }                 
                 function sectionsButtonClicked(tid, toid) {
