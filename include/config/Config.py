@@ -335,9 +335,9 @@ class Config():
         self.titles={}
         self.mta=set()
         self.app_config=self.get_attr('app_config', {}, join('config', 'app_config.json')) 
-        self.app_config['default_title']=default_title=self.app_config.get('default_title', 'default')
+        self.app_config['current_title']=current_title=self.app_config.get('current_title', 'default')
 
-        self.default_title=default_title
+        self.current_title=current_title
         
     def log(self, msg, type='info'):
         pub.sendMessage('applog', msg=msg, type=type)

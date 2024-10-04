@@ -1,5 +1,6 @@
 {
   "app_config": {
-    "default_title": "default"
+    "default_title": "default",
+    "current_title": "default"
   }
 }

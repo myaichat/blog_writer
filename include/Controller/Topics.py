@@ -92,22 +92,22 @@ class MutableDictAttribute:
 
 
 mocked_topics={}
-mocked_topics[0]=['Introduction: The Vision Behind DeepLearning.AI''s Community Initiatives',
+mocked_topics["0"]=['Introduction: The Vision Behind DeepLearning.AI''s Community Initiatives',
     'The Power of Collaboration: Uniting Experts in the AI Space',
     'Empowering the Next Generation: Educational Initiatives at DeepLearning.AI',
     'Bridging Gaps: Fostering Inclusivity in AI Communities',
     'Conclusion: Sustaining Growth and Cultivating Connections in the AI Community']
-mocked_topics[1]=[ 'Introduction:AI in Healthcare: Enhancing Diagnosis and Patient Care with Deep Learning',
+mocked_topics["1"]=[ 'Introduction:AI in Healthcare: Enhancing Diagnosis and Patient Care with Deep Learning',
     'Retail Revolution: How AI Personalization is Shaping Customer Experience',
     'AI in Finance: Automating Risk Management and Fraud Detection',
     'Smart Manufacturing: AI-Driven Efficiency and Predictive Maintenance',
     'Conclusion:Transforming Marketing Strategies with AI-Powered Consumer Insights']
-mocked_topics[2]=['Intro:Pioneering Natural Language Processing: Transforming Human-Computer Interaction',
+mocked_topics["2"]=['Intro:Pioneering Natural Language Processing: Transforming Human-Computer Interaction',
     'Reinforcement Learning Breakthroughs: Shaping Autonomous Systems and Robotics',
     'AI for Climate Change: Innovations in Environmental Monitoring and Prediction',
     'Advancements in Computer Vision: Revolutionizing Image Recognition and Analysis',
     'Conclusion:Ethics in AI: DeepLearning.AI''s Role in Developing Responsible AI Solutions']
-mocked_topics[3]=['Intro:Global AI Education: Expanding Access to AI Learning Through Partnerships',
+mocked_topics["3"]=['Intro:Global AI Education: Expanding Access to AI Learning Through Partnerships',
 'Empowering Women in AI: DeepLearning.AI''s Role in Promoting Diversity and Inclusion',
 'AI for Social Good: Collaborative Projects Tackling Global Challenges',
 'The AI Educators'' Network: Fostering Knowledge Sharing and Professional Growth',
@@ -126,22 +126,25 @@ class Topic():
             os.makedirs(latest_dir)
  
 
-        if 0:
+        if 1:
             self.reset()
   
 
     def set_topics(self, title_id):
         print('apc.mock',apc.mock)
         if apc.mock:
-            self.topics[title_id] = mocked_topics[title_id]
+            self.topics[apc.current_title]={}
+            self.topics[apc.current_title][title_id] = {str(i):{'topic':x, 'tid':title_id} for i, x in enumerate(mocked_topics[title_id])}
             log(f"Mocked topics set")
         else:
             raise NotImplementedError
-        apc.topics=self.topics
+        apc.topics=self.topics[apc.current_title]
 
 
     def get_topics(self, title_id):
-        return self.topics[title_id]
+        if apc.current_title not in self.topics:
+            return None
+        return self.topics[apc.current_title].get(title_id, None)
 
     def init(self):
         self.cfg={}
@@ -174,8 +177,8 @@ class Topic():
                 self.topics_fn=join(latest_dir, f'topics_{apc.ts}_reset.json')
                 self.init()
                        
-        self.topics=self.get_attr('topics', {}, self.topics_fn)
-        apc.topics=self.topics
+        self.topics=self.get_attr('topics', {apc.current_title:{}}, self.topics_fn)
+        apc.topics=self.topics[apc.current_title]
 
 
     
@@ -199,10 +202,11 @@ class Topic():
                         if content:
                             cfg_dump = json.loads(content)
                             #pp(cfg_dump)
-                            data=cfg=cfg_dump
+                            #data=cfg=cfg_dump
                             if 1:
-                                self.cfg[config_fn]['topics']={int(k):v for k,v in data['topics'].items()}
-                                cfg=self.cfg[config_fn]
+                                self.cfg[config_fn]=cfg=cfg_dump
+                                #self.cfg[config_fn]['topics']={int(k):v for k,v in data['topics'].items()}
+                                #cfg=self.cfg[config_fn]
                         else:
                             print(f"Warning: {config_fn} is empty.")
                 except json.JSONDecodeError as e:

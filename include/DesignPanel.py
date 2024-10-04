@@ -24,8 +24,17 @@ class Design_WebViewPanel(wx.Panel, Design_Controller):
         self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
 
         # Set initial HTML content
-        self.set_initial_content()
 
+        if not self.design.get_name():
+            self.set_initial_content()
+        else:
+            #self.title_html, self.topic_html
+            self.title_html = self.get_title_html()
+            self.topic_html = self.get_topic_html()
+            self.show_html()   
+            #call after
+            wx.CallAfter(log, f"Design_WebViewPanel: Design loaded: {self.design.get_name()}")
+            #log(f"Design_WebViewPanel: Design loaded: {self.design.get_name()}")
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)

@@ -34,13 +34,15 @@ class ExplorePanel(wx.Panel,Sections_Controller):
         #self.web_view.Bind(wx.html2.EVT_WEBVIEW_ERROR, self.on_webview_error)
         if 1:
             # Set initial HTML content
-            pp(self.title.titles)
-            e()
-            if not self.title.titles:
+            #pp(self.title.titles)
+            #e()
+            self.titles=self.title.get_titles()
+            if not self.titles:
                 self.set_initial_content()
             else:
-                self.titles=self.title.titles
-                self.display_html()   
+                
+                self.display_html()
+                wx.CallAfter(log, f"ExplorePanel: Titles loaded: {len(self.titles)}")  
         # Create sizer to organize the WebView
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.web_view, 1, wx.EXPAND,0)
@@ -150,43 +152,47 @@ class ExplorePanel(wx.Panel,Sections_Controller):
             _, type,tid = url.split(":")
             
             if type == "use_title":
-                tid=int(tid)
+                tid=tid
                 print(f"Title ID: {tid}")
-                assert len(apc.titles)>tid
+                assert len(apc.titles)>int(tid)
                 log(f"Using title: {apc.titles[tid]}")
                 pub.sendMessage("use_title", tid=tid)
             if type == "use_topic":
                 title_id,topic_id=tid.split("_")
-                title_id,topic_id= int(title_id), int(topic_id)
+                title_id,topic_id= title_id, topic_id
                 print(f"Title ID: {title_id}")
                 assert len(apc.titles)>int(title_id)
-                log(f"Using topic: {apc.topics[title_id][topic_id]}")
+                try:
+                    log(f"Using topic: {apc.topics[title_id][topic_id]}")
+                except:
+                    pp(apc.topics)
+                    raise
                 pub.sendMessage("use_topic", tid=title_id, toid=topic_id)
             if type == "use_section":
                 title_id,topic_id, section_id=tid.split("_")
-                title_id,topic_id, section_id= int(title_id), int(topic_id), int(section_id)
+                title_id,topic_id, section_id= title_id, topic_id, section_id
                 print(f"Title ID: {title_id}")
                 assert len(apc.titles)>int(title_id)
                 log(f"Using section: {apc.sections[title_id][topic_id][section_id]}")
-                pub.sendMessage("use_section", tid=int(title_id), toid=int(topic_id), sid=int(section_id))
+                pub.sendMessage("use_section", tid=title_id, toid=topic_id, sid=section_id)
             elif type == "show_titles":
                 user_input=tid
                 log("design start")
                 pub.sendMessage("set_titles", user_input=user_input)
 
             elif type == "show_topics":
-                tid=int(tid)
+                tid=tid
                 apc.expanded_title=tid
                 print(f"Title ID: {tid}")
                 pub.sendMessage("set_topics", title_id=tid)  
 
             elif type == "show_sections":
                 title_id,topic_id=tid.split("_")
-                title_id,topic_id= int(title_id), int(topic_id)
+                title_id,topic_id= title_id, topic_id
                 apc.expanded_title=title_id
                 apc.expanded_topic=topic_id
                 print(f"Title ID: {title_id}, Topic ID: {topic_id}")
-                pub.sendMessage("set_sections", title_id=int(title_id), topic_id=int(topic_id))  
+                pub.sendMessage("set_sections", title_id=title_id, topic_id=topic_id)  
 
             elif type == "reset_titles":
                 self.set_initial_content(hard_reset=True)  

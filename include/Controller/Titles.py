@@ -12,7 +12,8 @@ class notImplementedError(Exception):
 
 
 import include.config.init_config as init_config 
-
+apc = init_config.apc
+log=apc.log
 
 def format_stacktrace():
     parts = ["Traceback (most recent call last):\n"]
@@ -100,10 +101,9 @@ class MutableDictAttribute:
                 setattr(self.parent, self.name, processed)
 
 
-apc = init_config.apc
-log=apc.log
+
 class Title():
-    titles = NotifyingDict()
+    titles = MutableDictAttribute()
     def __init__(self):
         #self.titles = []
         self.init()
@@ -117,7 +117,7 @@ class Title():
             os.makedirs(latest_dir)
  
 
-        if 0:
+        if 1:
             self.reset()
         
         if 0:
@@ -133,30 +133,35 @@ class Title():
         self.mta=set()
         self.dump_file={}
 
-    def set_titles(self, title_set_name='default'):
-        
-        self.titles[title_set_name]  ={}
+
+    def set_titles(self):
+        pp(self.titles)
+        self.titles[apc.current_title]  ={}
         if apc.mock:
             for tid, tt in enumerate(["Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI",
             "Empowering the Next Generation: DeepLearning.AI's Role in AI Education and Workforce Development",
             "Leading the Way: Groundbreaking Research and Innovations from DeepLearning.AI",
             "Building a Thriving Community: Collaborations and Initiatives at DeepLearning.AI",
             "Ethics in AI: DeepLearning.AI's Journey Towards Responsible and Fair Artificial Intelligence"]):
-                self.titles[title_set_name][str(tid)]=dict(title=tt)
+                #self.titles[title_set_name][str(tid)]=dict(title=tt)
+                self.titles[apc.current_title][str(tid)]={}
+                self.titles[apc.current_title][str(tid)]['title']=tt
+                
             log('Mock Titles set')
             #self.titles[0]['title']='Transforming Industries: How DeepLearning.AI is Revolutionizing Business with AI'
         else:
             raise NotImplementedError
-        apc.titles=self.titles
+        apc.titles=self.titles[apc.current_title]
 
     def get_titles(self):
-        return self.titles
+        return self.titles[apc.current_title]
 
     def process(self, attr_name, value):
+        
         #print   ('-----Processing:', attr_name, value)
         if attr_name in self.mta: # ['page_id', 'reel_id', 'user_token','followers_count','uploaded_cnt']:
             #print(f"Parent processing: {attr_name} = {value}")
-            if value:
+            if value is not None:
                 self.set_attr(attr_name, value)
             return value
     def reset(self, hard=False):
@@ -177,8 +182,8 @@ class Title():
                 self.titles_fn=join(latest_dir, f'titles_{apc.ts}_reset.json')
                 self.init()
                        
-        self.titles=self.get_attr('titles', {}, self.titles_fn)
-        apc.titles=self.titles
+        self.titles=self.get_attr('titles', {apc.current_title:{}}, self.titles_fn)
+        apc.titles=self.titles[apc.current_title]
 
 
     
@@ -226,10 +231,7 @@ class Title():
             return value
         self.cfg[config_fn]=cfg
         print('returning ',attr,  default)
-        try:
-            e()
-        except:
-            print(format_stacktrace())
+
         return default
     def set_attr(self, attr, value):
         #print('Setting:', attr, value, type(value))
@@ -243,7 +245,7 @@ class Title():
 
         assert dump_file, 'set_attr: No dump file specified'
         print('Dumping ******************************:', attr, dump_file)    
-        e()
+     
         with open(dump_file, 'w') as f:
             json.dump(cfg, f, indent=2)        
     
@@ -258,38 +260,43 @@ class Titles_Controller():
     def set_titles(self, user_input):
         self.title.set_titles()
         self.titles = self.title.get_titles()
+        
         apc.prompt=user_input
         #print(f"Titles: {self.titles}")
         self.display_html()
     def display_html(self):
+        self.titles = self.title.get_titles()
         #print("Titles_Controller: display_html")
         titles_html= """<button id="titles-button"  onclick="showTitles({tid},{toid})" style="position: absolute; left: 0;">Titles</button>
 <table>"""
 
-        pp(self.titles)
-        apc.current_title='default'
-        for tid, titled in self.titles[apc.current_title].items():
+        #pp(self.titles)
+        
+        for tid, titled in self.titles.items():
             #tid=str(tid)
+            
             title=titled['title']
             print   (f"display_html: Title: {tid}. {title}")
-
-            if tid in self.topic.topics:
+            topics = self.topic.get_topics(tid)
+            if topics:
                 #print(f"display_html: topic.topics: {tid}")
                 #exit(   )
-                topics = self.topic.topics[tid]
+                
                 topics_html ="<table>"
 
-                
-                for toid, topic in enumerate(topics):
+               
+                for toid, topicd in topics.items():
+                    toid=str(toid)
                     #print(f"display_html: Title: {tid} Topic: {toid}. {topic}")  
-
-                    if tid in self.section.sections:
+                    sections=self.section.get_sections(tid, toid)
+                    if sections:
                         section_html = "<table>"
-                        pp(self.section.sections)                        
+                        
                         print(f"tid in section: {tid}")
-                        if toid in self.section.sections[tid]:
+                        if 1:
                             print(f"toid in section.sections: {toid}")
-                            for sid, section in enumerate(self.section.sections[tid][toid]):
+                            for sid, sectiond in sections.items():
+                                section = sectiond['section']   
                                 section_html += f'''<tr><td><td class="td-cell"><button id="use-button"  onclick="useSection({tid},{toid},{sid})"><<<</button></td>
                                 <td><span class="blue-border">{section}</span>
                                 <br>
@@ -302,7 +309,7 @@ class Titles_Controller():
                     print(f"---------------------------------expanded_topic: {apc.expanded_topic} toid: {toid}")
                     if apc.expanded_title == tid and apc.expanded_topic == toid:
                         topic_border='fancy-border'
-
+                    topic = topicd['topic']
                     topics_html += f'''<tr><td class="td-cell"><button id="use-button"  onclick="useTopic({tid},{toid})"><<<</button></td>
                     <td> </td><td><a id="topic_{tid}_{toid}"></a><span class="{topic_border}">{topic}</span>
                     <br>
@@ -314,7 +321,7 @@ class Titles_Controller():
             else:
                 #pp(self.topic.topics)
                 #e()
-                topics_html = str(self.topic.topics.keys()) + f'No topics for {tid} +' + str(tid in self.topic.topics) + str(self.title.titles)
+                topics_html = str(self.topic.topics.keys()) + f'No topics for {tid}.'+str(type(tid))+'.' + str(tid in self.topic.topics) + str(self.title.titles)
             title_border='black_border'
             if apc.expanded_title == tid:
                 title_border='fancy-border'
