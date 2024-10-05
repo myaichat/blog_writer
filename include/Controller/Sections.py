@@ -197,8 +197,8 @@ class Section():
             os.rename(join(latest_dir, files[0]), self.sections_fn)
             if hard:
                 os.remove(self.sections_fn)
-                assert not isfile(self.topics_fn), self.sections_fn
-                self.sections_fn=join(latest_dir, f'topics_{apc.ts}_reset.json')
+                assert not isfile(self.sections_fn), self.sections_fn
+                self.sections_fn=join(latest_dir, f'sections_{apc.ts}_reset.json')
                 self.init()
                        
         self.sections=self.get_attr('sections', {apc.current_title:{}}, self.sections_fn)

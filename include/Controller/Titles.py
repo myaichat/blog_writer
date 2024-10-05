@@ -135,6 +135,7 @@ class Title():
 
 
     def set_titles(self):
+        #e()
         pp(self.titles)
         self.titles[apc.current_title]  ={}
         if apc.mock:
@@ -154,6 +155,7 @@ class Title():
         apc.titles=self.titles[apc.current_title]
 
     def get_titles(self):
+        #e()
         return self.titles[apc.current_title]
 
     def process(self, attr_name, value):
@@ -267,7 +269,8 @@ class Titles_Controller():
     def display_html(self):
         self.titles = self.title.get_titles()
         #print("Titles_Controller: display_html")
-        titles_html= """<button id="titles-button"  onclick="showTitles({tid},{toid})" style="position: absolute; left: 0;">Titles</button>
+        title_list= list(self.title.titles.keys())
+        titles_html= f"""<button id="titles-button"  onclick="titlesButtonClicked()" style="position: absolute; left: 0;">Titles 1</button> {title_list}
 <table>"""
 
         #pp(self.titles)
@@ -510,6 +513,10 @@ class Titles_Controller():
                     console.log('Test button clicked', tid);
                     window.location.href = 'app:use_title:'+tid;
                 }
+                function titlesButtonClicked() {
+                    console.log('titles button clicked', tid);
+                    window.location.href = 'app:show_titles:0';
+                }                 
                 function topicsButtonClicked(tid, toid) {
                     console.log('topics button clicked', tid);
                     window.location.href = 'app:show_topics:'+tid;

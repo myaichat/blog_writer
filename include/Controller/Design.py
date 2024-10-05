@@ -154,7 +154,7 @@ class Design():
     def get_name(self):
         return self.designs[apc.current_title]['title']['name']   
 
-    def reset(self):
+    def _reset(self):
         self.set_design()
 
     def process(self, attr_name, value):
@@ -181,9 +181,11 @@ class Design():
                 assert not isfile(self.designs_fn), self.designs_fn
                 self.designs_fn=join(latest_dir, f'designs_{apc.ts}_reset.json')
                 self.init()
+
                        
         self.designs=self.get_attr('designs', {apc.current_title:{'title':{'name':'','topics':[]}}}, self.designs_fn)
         apc.designs=self.designs[apc.current_title]
+        pp(self.designs)
 
 
     
@@ -261,10 +263,11 @@ class Design_Controller():
         pub.subscribe(self.use_title, "use_title")
         pub.subscribe(self.use_topic, "use_topic")
         pub.subscribe(self.use_section, "use_section")
-        pub.subscribe(self.reset_design, "reset_design")
+        #pub.subscribe(self.reset_design, "reset_design")
     
-    def reset_design(self, tid):
-        print(f"Resetting design: {tid}")
+    def _reset_design(self, tid):
+        print(f"Resetting designs: {tid}")
+        #self.show_initial_content(hard_reset=True)
         self.design.reset()
         #self.set_titles()
     def get_title_html(self):
@@ -274,10 +277,10 @@ class Design_Controller():
         #print(999, title)
         tid= design['title']['tid']
    
-        
+        title_list= list(self.design.designs.keys())
         title_html= "<table>"
         #for sname, section in design.items(): #<button onclick="testButtonClicked({sname})">del</button>
-        title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>
+        title_html += f'''<tr><td></td><td><b>Title #{tid}</b>  {title_list}<br><b style="font-size: 26px;">{title}</b></td></tr>
         '''
         title_html += "</table>"
         return title_html
@@ -287,10 +290,10 @@ class Design_Controller():
         title= apc.titles[tid]['title']
         design['title']['name'] = title
         design['title']['tid'] = tid    
-        
+        title_list= list(self.design.designs.keys())
         title_html= "<table>"
         #for sname, section in design.items(): #<button onclick="testButtonClicked({sname})">del</button>
-        title_html += f'''<tr><td></td><td><b>Title #{tid}</b><br><b style="font-size: 26px;">{title}</b></td></tr>
+        title_html += f'''<tr><td></td><td><b>Title #{tid}</b> {title_list}<br><b style="font-size: 26px;">{title}</b></td></tr>
         '''
         title_html += "</table>"
 
@@ -472,7 +475,7 @@ class Design_Controller():
             <pre>
                 <div id="header-container">
                 <h1>Design</h1><a href="app:show_preview:0">Preview</a>
-                <a href="app:reset_design:0">Reset</a>
+                <a href="app:reset_designs:0">Reset</a>
             </div>
             %s
             %s

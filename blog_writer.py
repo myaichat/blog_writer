@@ -10,7 +10,7 @@ import include.config.init_config as init_config
 init_config.init(**{})
 apc = init_config.apc
 
-apc.mock = True
+apc.mock = False
 
 
 class WorkbookPanel(wx.Panel):

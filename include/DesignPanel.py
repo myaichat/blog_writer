@@ -44,7 +44,8 @@ class Design_WebViewPanel(wx.Panel, Design_Controller):
         
 
 
-    def set_initial_content(self):
+    def set_initial_content(self, hard_reset=False):
+        self.design.reset(hard_reset)
         initial_html = """
         <html>
             <head>
@@ -99,11 +100,11 @@ class Design_WebViewPanel(wx.Panel, Design_Controller):
             if type == "set_title":
                 title= self.decode(payload)
                 print(f"Setting title: {title}")
-            if type == "reset_design":
+            if type == "reset_designs":
                 title= self.decode(payload)
                 print(f"Resetting design: {title}") 
-                self.design.reset(hard=True) 
-                self.set_initial_content()  
+                #self.design.reset(hard=True) 
+                self.set_initial_content(hard_reset=True)  
             if type == "activate_topic":
                 tid, toid = payload.split("_")
                 tid, toid = int(tid), int(toid)

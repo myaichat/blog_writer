@@ -124,7 +124,11 @@ class ExplorePanel(wx.Panel,Sections_Controller):
             </style>
         </head>
         <body>
-            <h1>Welcome to the Blog Writer</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Welcome to the Blog Writer</h1>
+                <label><input type="checkbox" id="terms-checkbox">Mock</label>
+            </div>
+    
             <div id="input-container">
             <textarea id="user-input" placeholder="Enter your prompt here">%s</textarea>
             </div>
@@ -134,8 +138,9 @@ class ExplorePanel(wx.Panel,Sections_Controller):
             <script>
                 function startButtonClicked() {
                     var userInput = document.getElementById('user-input').value;
+                    var checkboxChecked = document.getElementById('terms-checkbox').checked;
                     document.getElementById('output').innerHTML = 'You entered: ' + userInput;
-                    window.location.href = 'app:show_titles:' + encodeURIComponent(userInput);
+                    window.location.href = 'app:show_titles:'+checkboxChecked+ '|' + encodeURIComponent(userInput);
                 }
             </script>
         </body>
@@ -176,8 +181,12 @@ class ExplorePanel(wx.Panel,Sections_Controller):
                 log(f"Using section: {apc.sections[title_id][topic_id][section_id]}")
                 pub.sendMessage("use_section", tid=title_id, toid=topic_id, sid=section_id)
             elif type == "show_titles":
-                user_input=tid
-                log("design start")
+                mock,user_input=tid.split("|")
+                print(user_input)
+                apc.mock=False
+                if mock=="true":
+                    apc.mock=True
+                log(f"design start: {mock}")
                 pub.sendMessage("set_titles", user_input=user_input)
 
             elif type == "show_topics":
@@ -185,6 +194,11 @@ class ExplorePanel(wx.Panel,Sections_Controller):
                 apc.expanded_title=tid
                 print(f"Title ID: {tid}")
                 pub.sendMessage("set_topics", title_id=tid)  
+            elif type == "show_titles1":
+                #tid=tid
+                #apc.active_title=tid
+                print(f"Get new title set")
+                pub.sendMessage("set_titles")                  
 
             elif type == "show_sections":
                 title_id,topic_id=tid.split("_")
